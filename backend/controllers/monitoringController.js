@@ -55,14 +55,16 @@ const createMonitoring = async (req, res) => {
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    const [indikatorCheck] = await pool.execute(
-      `SELECT id FROM monitoring_benda_tajam 
-       WHERE user_id = ? 
-       AND indikator_id = ? 
-       AND MONTH(Waktu) = ? 
-       AND YEAR(Waktu) = ?`,
-      [user_id, indikator_id, currentMonth, currentYear]
-    );
+const [indikatorCheck] = await pool.execute(
+  `SELECT id FROM monitoring_benda_tajam 
+   WHERE user_id = ? 
+   AND indikator_id = ? 
+   AND minggu = ?
+   AND MONTH(Waktu) = ? 
+   AND YEAR(Waktu) = ?`,
+  [user_id, indikator_id, minggu, currentMonth, currentYear]
+);
+
 
     if (indikatorCheck.length > 0) {
       return res.status(400).json({
