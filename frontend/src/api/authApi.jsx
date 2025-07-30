@@ -1,16 +1,22 @@
+// src/api/authApi.js
+import axios from 'axios';
+
 const API_URL = 'http://localhost:6969/api/auth/login';
 
 export const loginUser = async (nama_unit, password) => {
-  const response = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nama_unit, password }),
-  });
+  try {
+    const response = await axios.post(API_URL, {
+      nama_unit,
+      password,
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || 'Login gagal');
+    console.log('🔥 Respon login:', response.data);
+
+    // Kembalikan langsung token dan user
+    return response.data.data;
+  } catch (error) {
+    const message =
+      error.response?.data?.message || 'Login gagal. Silakan periksa nama unit dan password.';
+    throw new Error(message);
   }
-
-  return await response.json();
 };

@@ -3,44 +3,41 @@ const cors = require('cors');
 require('dotenv').config();
 
 // Import routes
-const authRoutes = require('./routes/authRoutes')
+const authRoutes = require('./routes/authRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
 const indikatorRoutes = require('./routes/indikatorRoutes');
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// CORS Configuration
+// ✅ CORS Configuration — HARUS SEBELUM ROUTES
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'], // Vite & React ports
+  origin: ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// ✅ Middleware lainnya
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/indikator', indikatorRoutes);
 
-// Health check
+// ✅ Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Error handling middleware
+// ✅ Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// 404 handler
+// ✅ 404 fallback
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
