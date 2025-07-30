@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 
+const url = `${import.meta.env.VITE_API_URL}/monitoring/export`;
+
+
 const getMonthYear = (isoDateStr) => {
   const date = new Date(isoDateStr);
   const month = date.getMonth();
@@ -113,6 +116,35 @@ const MonitoringTable = ({ data }) => {
     setSelectedMonth('all'); // Reset month filter when year changes
   };
 
+  const handleExport = async () => {
+  try {
+    const token = localStorage.getItem('token'); // Ambil token dari localStorage
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/monitoring/export`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Gagal mengekspor data');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'monitoring.xlsx';
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error(error);
+    alert('Export gagal');
+  }
+};
+
+
   return (
     <div className="w-full">
       {/* Filter Section */}
@@ -125,6 +157,15 @@ const MonitoringTable = ({ data }) => {
           </div>
           <h3 className="text-lg font-semibold text-gray-800">Filter Data</h3>
         </div>
+
+<button
+  onClick={handleExport}
+  className="px-4 py-2 bg-green-500 text-white rounded"
+>
+  Export Excel
+</button>
+
+
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Year Filter */}
@@ -180,108 +221,112 @@ const MonitoringTable = ({ data }) => {
         </div>
       </div>
 
-      {/* Table Section */}
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto border-collapse">
-            <thead>
-              <tr className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
-                <th rowSpan="2" className="border border-white/20 p-4 text-center text-xl font-semibold bg-blue-600">
-                  No
-                </th>
-                <th rowSpan="2" className="border border-white/20 p-4 text-center text-2xl font-semibold min-w-[470px] bg-blue-600">
-                  Indikator
-                </th>
-                {Object.entries(groupedByMonth).map(([key]) => {
-                  const [month, year] = key.split('-').map(Number);
-                  return (
-                    <th key={key} colSpan={4} className="border border-white/20 p-4 text-center font-semibold text-xl bg-blue-600">
-                      {monthNames[month]}
-                    </th>
-                  );
-                })}
-              </tr>
-              <tr className="bg-gradient-to-r from-blue-400 to-indigo-400 text-white">
-                {Object.entries(groupedByMonth).map(([key]) =>
-                  [1, 2, 3, 4].map((minggu) => (
-                    <th key={`${key}-m${minggu}`} className="border border-white/20 p-3 text-center font-medium bg-blue-500 min-w-[80px]">
-                      {minggu}
-                    </th>
-                  ))
-                )}
-              </tr>
-            </thead>
+     {/* Table Section */}
+<div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+  <div className="overflow-x-auto">
+    <table className="min-w-full table-auto border-collapse">
+      <thead>
+        <tr className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+          <th rowSpan="2" className="border border-white/20 p-2 sm:p-4 text-center text-xs sm:text-xl font-semibold bg-blue-600">
+            No
+          </th>
+          <th rowSpan="2" className="border border-white/20 p-2 sm:p-4 text-center text-sm sm:text-2xl font-semibold min-w-[200px] sm:min-w-[470px] bg-blue-600">
+            Indikator
+          </th>
+          {Object.entries(groupedByMonth).map(([key]) => {
+            const [month, year] = key.split('-').map(Number);
+            return (
+              <th key={key} colSpan={4} className="border border-white/20 p-2 sm:p-4 text-center font-semibold text-xs sm:text-xl bg-blue-600">
+                {monthNames[month]}
+              </th>
+            );
+          })}
+        </tr>
+        <tr className="bg-gradient-to-r from-blue-400 to-indigo-400 text-white">
+          {Object.entries(groupedByMonth).map(([key]) =>
+            [1, 2, 3, 4].map((minggu) => (
+              <th
+                key={`${key}-m${minggu}`}
+                className="border border-white/20 p-1 sm:p-3 text-center font-medium text-[10px] sm:text-base bg-blue-500 min-w-[48px] sm:min-w-[80px]"
+              >
+                {minggu}
+              </th>
+            ))
+          )}
+        </tr>
+      </thead>
 
-            <tbody>
-              {indikatorList.length === 0 ? (
-                <tr>
-                  <td colSpan={2 + kolom.length} className="p-8 text-center text-gray-500">
-                    <div className="flex flex-col items-center gap-2">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                      </svg>
-                      <span>Tidak ada data untuk filter yang dipilih</span>
+      <tbody>
+        {indikatorList.length === 0 ? (
+          <tr>
+            <td colSpan={2 + kolom.length} className="p-8 text-center text-gray-500">
+              <div className="flex flex-col items-center gap-2">
+                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                </svg>
+                <span>Tidak ada data untuk filter yang dipilih</span>
+              </div>
+            </td>
+          </tr>
+        ) : (
+          indikatorList.map((indikator, index) => (
+            <tr key={indikator.indikator_id} className="hover:bg-blue-50 transition-colors duration-150">
+              <td className="border border-gray-200 text-center p-2 sm:p-4 text-xs sm:text-sm bg-gray-50 font-medium">
+                {index + 1}
+              </td>
+              <td className="border border-gray-200 p-2 sm:p-4 text-xs sm:text-sm text-gray-800 font-medium">
+                {indikator.indikator_isi}
+              </td>
+              {kolom.map(({ month, year, minggu }, i) => {
+                const item = filteredData.find(d =>
+                  d.indikator_id.toString() === indikator.indikator_id.toString() &&
+                  getMonthYear(d.waktu).month === month &&
+                  getMonthYear(d.waktu).year === year &&
+                  d.minggu === minggu
+                );
+
+                let cellContent, cellClass;
+                if (!item) {
+                  cellContent = '-';
+                  cellClass = 'text-gray-400';
+                } else if (item.nilai === 1) {
+                  cellContent = (
+                    <div className="flex items-center justify-center">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     </div>
+                  );
+                  cellClass = 'text-green-600';
+                } else {
+                  cellContent = (
+                    <div className="flex items-center justify-center">
+                      <div className="w-5 h-5 sm:w-6 sm:h-6 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                    </div>
+                  );
+                  cellClass = 'text-red-600';
+                }
+
+                return (
+                  <td key={`${indikator.indikator_id}-${i}`} className={`border border-gray-200 text-center p-1 sm:p-4 text-xs sm:text-sm ${cellClass}`}>
+                    {cellContent}
                   </td>
-                </tr>
-              ) : (
-                indikatorList.map((indikator, index) => (
-                  <tr key={indikator.indikator_id} className="hover:bg-blue-50 transition-colors duration-150">
-                    <td className="border border-gray-200 text-center p-4 font-medium bg-gray-50">
-                      {index + 1}
-                    </td>
-                    <td className="border border-gray-200 p-4 font-medium text-gray-800">
-                      {indikator.indikator_isi}
-                    </td>
-                    {kolom.map(({ month, year, minggu }, i) => {
-                      const item = filteredData.find(d =>
-                        d.indikator_id.toString() === indikator.indikator_id.toString() &&
-                        getMonthYear(d.waktu).month === month &&
-                        getMonthYear(d.waktu).year === year &&
-                        d.minggu === minggu
-                      );
-                      
-                      let cellContent, cellClass;
-                      if (!item) {
-                        cellContent = '-';
-                        cellClass = 'text-gray-400';
-                      } else if (item.nilai === 1) {
-                        cellContent = (
-                          <div className="flex items-center justify-center">
-                            <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            </div>
-                          </div>
-                        );
-                        cellClass = 'text-green-600';
-                      } else {
-                        cellContent = (
-                          <div className="flex items-center justify-center">
-                            <div className="w-6 h-6 bg-red-100 rounded-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </div>
-                          </div>
-                        );
-                        cellClass = 'text-red-600';
-                      }
-                      
-                      return (
-                        <td key={`${indikator.indikator_id}-${i}`} className={`border border-gray-200 text-center p-4 ${cellClass}`}>
-                          {cellContent}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                );
+              })}
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 
       {/* Statistics Summary */}
       {indikatorList.length > 0 && (

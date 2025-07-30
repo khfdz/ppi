@@ -4,8 +4,9 @@ const {
   getAllMonitoring,
   createMonitoring,
   updateMonitoring,
-  deleteMonitoring
+  deleteMonitoring,
 } = require('../controllers/monitoringController');
+const { exportMonitoring } = require('../controllers/exportController');
 const { authenticateToken } = require('../middlewares/auth');
 
 // All routes are protected
@@ -15,5 +16,7 @@ router.get('/', getAllMonitoring);
 router.post('/', createMonitoring);
 router.put('/:id', updateMonitoring);
 router.delete('/:id', deleteMonitoring);
+
+router.get('/export', exportMonitoring);
 
 module.exports = router;

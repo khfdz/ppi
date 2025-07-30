@@ -3,9 +3,13 @@ const pool = require('../config/database');
 const getAllMonitoring = async (req, res) => {
   try {
     const [rows] = await pool.execute(
-      `SELECT m.*, i.indikator_isi, i.indikator_jenis 
+      `SELECT m.*, 
+              i.indikator_isi, 
+              i.indikator_jenis,
+              u.nama_unit AS user_nama_unit
        FROM monitoring_benda_tajam m
        JOIN indikators i ON m.indikator_id = i.indikator_id
+       JOIN user u ON m.user_id = u.user_id
        WHERE m.user_id = ?
        ORDER BY m.waktu DESC`,
       [req.user.user_id]
@@ -23,6 +27,7 @@ const getAllMonitoring = async (req, res) => {
     });
   }
 };
+
 
 const createMonitoring = async (req, res) => {
   try {
