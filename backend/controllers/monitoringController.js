@@ -2,18 +2,35 @@ const pool = require('../config/database');
 
 const getAllMonitoring = async (req, res) => {
   try {
-    const [rows] = await pool.execute(
-      `SELECT m.*, 
-              i.indikator_isi, 
-              i.indikator_jenis,
-              u.nama_unit AS user_nama_unit
-       FROM monitoring_benda_tajam m
-       JOIN indikators i ON m.indikator_id = i.indikator_id
-       JOIN user u ON m.user_id = u.user_id
-       WHERE m.user_id = ?
-       ORDER BY m.waktu DESC`,
-      [req.user.user_id]
-    );
+    const user_id = req.user.user_id;
+    const { tahun, bulan } = req.query;
+
+    let query = `
+      SELECT m.*, 
+             i.indikator_isi, 
+             i.indikator_jenis,
+             u.nama_unit AS user_nama_unit
+      FROM monitoring_benda_tajam m
+      JOIN indikators i ON m.indikator_id = i.indikator_id
+      JOIN user u ON m.user_id = u.user_id
+      WHERE m.user_id = ?
+    `;
+
+    const queryParams = [user_id];
+
+    if (tahun) {
+      query += ` AND YEAR(m.waktu) = ?`;
+      queryParams.push(tahun);
+    }
+
+    if (bulan) {
+      query += ` AND MONTH(m.waktu) = ?`;
+      queryParams.push(bulan);
+    }
+
+    query += ` ORDER BY m.waktu DESC`;
+
+    const [rows] = await pool.execute(query, queryParams);
 
     res.json({
       success: true,

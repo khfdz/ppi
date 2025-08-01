@@ -116,18 +116,28 @@ const MonitoringTable = ({ data }) => {
     setSelectedMonth('all'); // Reset month filter when year changes
   };
 
-  const handleExport = async () => {
+const handleExport = async () => {
   try {
-    const token = localStorage.getItem('token'); // Ambil token dari localStorage
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/monitoring/export`, {
+    const token = localStorage.getItem('token');
+    
+    const params = new URLSearchParams();
+
+    if (selectedYear !== 'all') params.append('tahun', selectedYear);
+    if (selectedMonth !== 'all') {
+      const [bulan] = selectedMonth.split('-');
+      params.append('bulan', parseInt(bulan) + 1); // +1 karena index bulan 0-11
+    }
+
+    const fullUrl = `${import.meta.env.VITE_API_URL}/api/monitoring/export?${params.toString()}`;
+    console.log("Mengekspor ke URL:", fullUrl);
+
+    const response = await fetch(fullUrl, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    if (!response.ok) {
-      throw new Error('Gagal mengekspor data');
-    }
+    if (!response.ok) throw new Error('Gagal mengekspor data');
 
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -136,13 +146,13 @@ const MonitoringTable = ({ data }) => {
     a.href = url;
     a.download = 'monitoring.xlsx';
     a.click();
-
     window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error(error);
     alert('Export gagal');
   }
 };
+
 
 
   return (
