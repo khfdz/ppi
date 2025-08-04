@@ -13,7 +13,7 @@ const HomePage = ({ onNavigate, onLogout, user }) => {
       color: 'from-red-500 to-pink-600',
       bgColor: 'from-red-50 to-pink-50',
       borderColor: 'border-red-200',
-      onClick: onNavigate
+      onClick: () => onNavigate({ modul: 'MBTJ' })
     },
     {
       id: 'monitoring-kebersihan',
@@ -23,7 +23,7 @@ const HomePage = ({ onNavigate, onLogout, user }) => {
       color: 'from-blue-500 to-cyan-600',
       bgColor: 'from-blue-50 to-cyan-50',
       borderColor: 'border-blue-200',
-      onClick: () => handleComingSoon('Monitoring Penatalaksanaan Kebersihan')
+      onClick: () => onNavigate({ modul: 'MPKDA' })
     },
     {
       id: 'supervisi-perawat',
@@ -135,13 +135,6 @@ const HomePage = ({ onNavigate, onLogout, user }) => {
           <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Sistem monitoring dan audit komprehensif untuk meningkatkan kualitas pencegahan dan pengendalian infeksi di fasilitas kesehatan
           </p>
-          
-          <div className="mt-6 inline-flex items-center gap-2 bg-blue-50 px-4 py-2 rounded-full border border-blue-200">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-sm font-medium text-blue-700">
-              Logged in as: {user?.nama_unit || 'User'}
-            </span>
-          </div>
         </div>
 
         {/* Menu Grid */}

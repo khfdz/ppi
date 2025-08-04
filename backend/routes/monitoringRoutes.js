@@ -11,7 +11,6 @@ const { authenticateToken } = require('../middlewares/auth');
 
 // All routes are protected
 router.use(authenticateToken);
-
 router.get('/export', exportMonitoring);
 
 router.get('/', getAllMonitoring);

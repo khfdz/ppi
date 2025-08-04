@@ -1,6 +1,6 @@
 const pool = require('../config/database');
 
-const getAllMonitoring = async (req, res) => {
+const getAllMonitoringAmbulance = async (req, res) => {
   try {
     const user_id = req.user.user_id;
     const { tahun, bulan } = req.query;
@@ -10,7 +10,7 @@ const getAllMonitoring = async (req, res) => {
              i.indikator_isi, 
              i.indikator_jenis,
              u.nama_unit AS user_nama_unit
-      FROM monitoring_benda_tajam m
+      FROM monitoring_ambulance m
       JOIN indikators i ON m.indikator_id = i.indikator_id
       JOIN user u ON m.user_id = u.user_id
       WHERE m.user_id = ?
@@ -37,7 +37,7 @@ const getAllMonitoring = async (req, res) => {
       data: rows
     });
   } catch (error) {
-    console.error('Get monitoring error:', error);
+    console.error('Get ambulance monitoring error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -45,13 +45,11 @@ const getAllMonitoring = async (req, res) => {
   }
 };
 
-
-const createMonitoring = async (req, res) => {
+const createMonitoringAmbulance = async (req, res) => {
   try {
     const { indikator_id, minggu, nilai } = req.body;
     const user_id = req.user.user_id;
 
-    // Validasi input
     if (!indikator_id || !minggu || nilai === undefined) {
       return res.status(400).json({
         success: false,
@@ -59,7 +57,6 @@ const createMonitoring = async (req, res) => {
       });
     }
 
-    // Cek apakah indikator_id valid
     const [indikatorExists] = await pool.execute(
       'SELECT indikator_id FROM indikators WHERE indikator_id = ?',
       [indikator_id]
@@ -72,68 +69,65 @@ const createMonitoring = async (req, res) => {
       });
     }
 
-    // Cek apakah data sudah ada untuk user + indikator + minggu + bulan + tahun
     const now = new Date();
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    const [indikatorCheck] = await pool.execute(
-      `SELECT id FROM monitoring_benda_tajam 
+    const [check] = await pool.execute(
+      `SELECT id FROM monitoring_ambulance 
        WHERE user_id = ? 
        AND indikator_id = ? 
-       AND minggu = ?
-       AND MONTH(Waktu) = ? 
-       AND YEAR(Waktu) = ?`,
+       AND minggu = ? 
+       AND MONTH(waktu) = ? 
+       AND YEAR(waktu) = ?`,
       [user_id, indikator_id, minggu, currentMonth, currentYear]
     );
 
-    if (indikatorCheck.length > 0) {
-      // Data sudah ada → update nilai
-      const idToUpdate = indikatorCheck[0].id;
+    if (check.length > 0) {
+      const idToUpdate = check[0].id;
 
       await pool.execute(
-        `UPDATE monitoring_benda_tajam 
-         SET nilai = ?, Waktu = NOW()
+        `UPDATE monitoring_ambulance 
+         SET nilai = ?, waktu = NOW()
          WHERE id = ?`,
         [nilai, idToUpdate]
       );
 
       const [updatedData] = await pool.execute(
-        `SELECT id, indikator_id, minggu, nilai, user_id, Waktu AS waktu 
-         FROM monitoring_benda_tajam 
+        `SELECT id, indikator_id, minggu, nilai, user_id, waktu 
+         FROM monitoring_ambulance 
          WHERE id = ?`,
         [idToUpdate]
       );
 
       return res.status(200).json({
         success: true,
-        message: 'Data monitoring berhasil diperbarui',
+        message: 'Data ambulance berhasil diperbarui',
         data: updatedData[0]
       });
     }
 
-    // Data belum ada → insert baru
     const [insertResult] = await pool.execute(
-      `INSERT INTO monitoring_benda_tajam 
-       (user_id, indikator_id, minggu, nilai, Waktu) 
+      `INSERT INTO monitoring_ambulance 
+       (user_id, indikator_id, minggu, nilai, waktu) 
        VALUES (?, ?, ?, ?, NOW())`,
       [user_id, indikator_id, minggu, nilai]
     );
 
     const [newData] = await pool.execute(
-      `SELECT id, indikator_id, minggu, nilai, user_id, Waktu AS waktu 
-       FROM monitoring_benda_tajam 
+      `SELECT id, indikator_id, minggu, nilai, user_id, waktu 
+       FROM monitoring_ambulance 
        WHERE id = ?`,
       [insertResult.insertId]
     );
 
     res.status(201).json({
       success: true,
-      message: 'Data monitoring berhasil ditambahkan',
+      message: 'Data ambulance berhasil ditambahkan',
       data: newData[0]
     });
   } catch (error) {
-    console.error('Create monitoring error:', error);
+    console.error('Create ambulance monitoring error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -141,14 +135,15 @@ const createMonitoring = async (req, res) => {
   }
 };
 
-
-const updateMonitoring = async (req, res) => {
+const updateMonitoringAmbulance = async (req, res) => {
   try {
     const { id } = req.params;
     const { indikator_id, minggu, nilai } = req.body;
 
     const [result] = await pool.execute(
-      'UPDATE monitoring_benda_tajam SET indikator_id = ?, minggu = ?, nilai = ?, Waktu = NOW() WHERE id = ? AND user_id = ?',
+      `UPDATE monitoring_ambulance 
+       SET indikator_id = ?, minggu = ?, nilai = ?, waktu = NOW()
+       WHERE id = ? AND user_id = ?`,
       [indikator_id, minggu, nilai, id, req.user.user_id]
     );
 
@@ -161,10 +156,10 @@ const updateMonitoring = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Monitoring data updated successfully'
+      message: 'Data ambulance berhasil diperbarui'
     });
   } catch (error) {
-    console.error('Update monitoring error:', error);
+    console.error('Update ambulance monitoring error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -172,12 +167,12 @@ const updateMonitoring = async (req, res) => {
   }
 };
 
-const deleteMonitoring = async (req, res) => {
+const deleteMonitoringAmbulance = async (req, res) => {
   try {
     const { id } = req.params;
 
     const [result] = await pool.execute(
-      'DELETE FROM monitoring_benda_tajam WHERE id = ? AND user_id = ?',
+      'DELETE FROM monitoring_ambulance WHERE id = ? AND user_id = ?',
       [id, req.user.user_id]
     );
 
@@ -190,10 +185,10 @@ const deleteMonitoring = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Monitoring data deleted successfully'
+      message: 'Data ambulance berhasil dihapus'
     });
   } catch (error) {
-    console.error('Delete monitoring error:', error);
+    console.error('Delete ambulance monitoring error:', error);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -202,8 +197,8 @@ const deleteMonitoring = async (req, res) => {
 };
 
 module.exports = {
-  getAllMonitoring,
-  createMonitoring,
-  updateMonitoring,
-  deleteMonitoring
+  getAllMonitoringAmbulance,
+  createMonitoringAmbulance,
+  updateMonitoringAmbulance,
+  deleteMonitoringAmbulance
 };

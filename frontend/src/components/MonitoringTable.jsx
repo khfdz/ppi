@@ -168,12 +168,7 @@ const handleExport = async () => {
           <h3 className="text-lg font-semibold text-gray-800">Filter Data</h3>
         </div>
 
-<button
-  onClick={handleExport}
-  className="px-4 py-2 bg-green-500 text-white rounded"
->
-  Export Excel
-</button>
+
 
 
         
@@ -217,6 +212,16 @@ const handleExport = async () => {
             </select>
           </div>
         </div>
+        <div className="flex flex-col items-start space-y-2">
+  <label className='block text-sm font-medium text-gray-700 mt-2'>Download Data :</label>
+  <button
+    onClick={handleExport}
+    className="px-4 py-2 bg-green-500 text-white rounded cursor-pointer"
+  >
+    Export Excel
+  </button>
+
+</div>
 
         {/* Data Summary */}
         <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -225,7 +230,7 @@ const handleExport = async () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span className="text-sm font-medium">
-              Menampilkan {filteredData.length} data dari {indikatorList.length} indikator
+              Menampilkan {filteredData.length} jawaban dari {indikatorList.length} indikator
             </span>
           </div>
         </div>

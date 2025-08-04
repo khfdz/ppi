@@ -2,22 +2,36 @@ const pool = require('../config/database');
 
 // GET all indikators
 const getAllIndikators = async (req, res) => {
-    try {
-        const [rows] = await pool.execute('SELECT * FROM indikators ORDER BY indikator_id DESC');
-        res.status(200).json({
-            success: true,
-            message: 'Data indikator berhasil diambil',
-            data: rows
-        });
-    } catch (error) {
-        console.error('Error fetching indikators:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Gagal mengambil data indikator',
-            error: error.message
-        });
+  try {
+    const { jenis } = req.query;
+
+    let query = 'SELECT * FROM indikators';
+    const params = [];
+
+    if (jenis) {
+      query += ' WHERE indikator_jenis = ?';
+      params.push(jenis);
     }
+
+    query += ' ORDER BY indikator_id DESC';
+
+    const [rows] = await pool.execute(query, params);
+
+    res.status(200).json({
+      success: true,
+      message: 'Data indikator berhasil diambil',
+      data: rows
+    });
+  } catch (error) {
+    console.error('Error fetching indikators:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Gagal mengambil data indikator',
+      error: error.message
+    });
+  }
 };
+
 
 // GET indikator by ID
 const getIndikatorById = async (req, res) => {

@@ -1,22 +1,25 @@
-// import axios from 'axios';
-
-// export const fetchIndikators = async (token) => {
-//   const response = await axios.get('http://localhost:6969/api/indikator', {
-//     headers: { Authorization: `Bearer ${token}` },
-//   });
-//   return response.data.data || [];
-// };
-
-// src/api/indikatorApi.js (atau file kamu sekarang)
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-export const fetchIndikators = async (token) => {
-  const response = await axios.get(`${API_BASE_URL}/api/indikator`, {
+export const fetchIndikators = async (token, filter = {}) => {
+  const params = new URLSearchParams();
+
+  // Tambahkan filter jika ada
+  if (filter.jenis) {
+    params.append('jenis', filter.jenis);
+  }
+
+  const url = `${API_BASE_URL}/api/indikator${params.toString() ? `?${params.toString()}` : ''}`;
+
+  const response = await axios.get(url, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
-  return response.data.data || [];
+
+  const data = response.data.data || [];
+
+  // Urutkan ASC
+  return data.sort((a, b) => a.indikator_id - b.indikator_id);
 };

@@ -5,6 +5,7 @@ require('dotenv').config();
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
+const ambulanceRoutes = require('./routes/ambulanceRoutes')
 const indikatorRoutes = require('./routes/indikatorRoutes');
 
 const app = express();
@@ -37,6 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 // ✅ Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/monitoring', monitoringRoutes);
+app.use('/api/ambulance', ambulanceRoutes);
 app.use('/api/indikator', indikatorRoutes);
 
 // ✅ Health check
