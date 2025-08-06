@@ -15,7 +15,7 @@ const AmbulanceInput = ({ token, minggu, onCancel, completedWeeks = [] }) => {
     const loadIndikators = async () => {
       setLoading(true);
       try {
-        const data = await fetchIndikators(token, { jenis: 'MPKDA' }); // Filter MBTJ
+        const data = await fetchIndikators(token, { jenis: 'MPKDA' });
         setIndikators(data);
 
         // Initialize empty answers for all indicators
@@ -45,6 +45,10 @@ const AmbulanceInput = ({ token, minggu, onCancel, completedWeeks = [] }) => {
         jawaban_text: jawaban === 1 ? 'Ya' : 'Tidak',
       },
     }));
+    // Move to the next question if not the last one
+    if (currentIndex < indikators.length - 1) {
+      setCurrentIndex(prev => prev + 1);
+    }
   };
 
   const handleNext = () => {

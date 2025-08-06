@@ -209,7 +209,7 @@ const HomePage = ({ onNavigate, onLogout, user }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-800">1</div>
+              <div className="text-2xl font-bold text-gray-800">2</div>
               <div className="text-sm text-gray-600">Modul Aktif</div>
             </div>
             
@@ -219,7 +219,7 @@ const HomePage = ({ onNavigate, onLogout, user }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <div className="text-2xl font-bold text-gray-800">7</div>
+              <div className="text-2xl font-bold text-gray-800">6</div>
               <div className="text-sm text-gray-600">Coming Soon</div>
             </div>
             

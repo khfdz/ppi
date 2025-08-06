@@ -1,507 +1,372 @@
-import React, { use, useEffect, useState } from 'react';
-import Swal from 'sweetalert2';
-import { fetchIndikators } from '../api/indikatorApi';
-import { submitAmbulance} from '../api/ambulanceApi';
+import React, { useState } from 'react';
 
-const AmbulanceTable = ({ token, minggu, onCancel, completedWeeks = [] }) => {
-    const [indikators, setIndikators] = useState ([]);
-    const [answer, setAnswers] = useState({});
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [loading, setLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
+const url = `${import.meta.env.VITE_API_URL}/monitoring/export`;
 
-    useEffect(() => {
-        const loadIndikators = async () => {
-            setLoading(true);
-            try {
-                const data = await fetchIndikators(token, { jenis: 'MPKDA'});
-                setIndikators(data);
+const getMonthYear = (isoDateStr) => {
+  const date = new Date(isoDateStr);
+  const month = date.getMonth();
+  const year = date.getFullYear();
+  return { month, year };
+};
 
-                const initialAnswer = {};
-                data.forEach(indicator => {
-                    initialAnswer[indicator.indikator_id] = nulll;
-                });
-                setAnswers(initialAnswer);
-            } catch (err) {
-                setErrorMsg('Gagal mengambil data indikator ambulance');
-                console.error(err);
-            } finally {
-                setLoading(false);
-            }
-        };
+const monthNames = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
 
-        if (token) loadIndikators();
-    }, [token]);
+const getMonthYearLabel = ({ month }) => monthNames[month];
 
-    const handleAnswer = (jawaban) => {
-        const indikator = indikators[currentIndex];
-        setAnswers((prev) => ({
-            ...prev,
-            [indikator.indikator_id]: {
-                pertanyaan: indikator.indikator_isi,
-                jawaban: jawaban,
-                jawaban_text: jawaban === 1 ? 'Ya' : 'Tidak',
-            },
-        }));
+const AmbulanceTable = ({ data }) => {
+  const [selectedMonth, setSelectedMonth] = useState('all');
+  const [selectedYear, setSelectedYear] = useState('all');
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <h3 className="text-lg font-semibold text-gray-600 mb-2">Tidak ada data</h3>
+        <p className="text-gray-500 text-center">Data akan muncul setelah Anda menginput data</p>
+      </div>
+    );
+  }
+
+  // Ambil semua bulan-tahun unik
+  const allMonthYears = Array.from(
+    new Set(data.map(item => {
+      const { month, year } = getMonthYear(item.waktu);
+      return `${month}-${year}`;
+    }))
+  ).map(str => {
+    const [month, year] = str.split('-').map(Number);
+    return { month, year };
+  }).sort((a, b) => a.year - b.year || a.month - b.month);
+
+  // Ambil semua tahun unik
+  const allYears = Array.from(
+    new Set(data.map(item => getMonthYear(item.waktu).year))
+  ).sort((a, b) => a - b);
+
+  // Filter berdasarkan tahun dan bulan
+  const filteredData = data.filter(item => {
+    const { month, year } = getMonthYear(item.waktu);
+    
+    // Filter berdasarkan tahun
+    if (selectedYear !== 'all' && year !== parseInt(selectedYear)) {
+      return false;
+    }
+    
+    // Filter berdasarkan bulan
+    if (selectedMonth !== 'all' && `${month}-${year}` !== selectedMonth) {
+      return false;
+    }
+    
+    return true;
+  });
+
+  // Filter bulan yang tersedia berdasarkan tahun yang dipilih
+  const availableMonths = selectedYear === 'all' 
+    ? allMonthYears 
+    : allMonthYears.filter(({ year }) => year === parseInt(selectedYear));
+
+  const indikatorMap = {};
+  filteredData.forEach(item => {
+    indikatorMap[item.indikator_id] = {
+      indikator_isi: item.indikator_isi,
+      indikator_jenis: item.indikator_jenis,
     };
+  });
 
-    const handleNext = () => {
-        if (currentIndex < indikators.length - 1) {
-            setCurrentIndex(prev => prev + 1);
-        }
-    };
+  const indikatorList = Object.keys(indikatorMap)
+    .sort((a, b) => Number(a) - Number(b))
+    .map(id => ({
+      indikator_id: id,
+      ...indikatorMap[id],
+    }));
 
-    const handlePrevious = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(prev => prev - 1);
-        }
-    };
+  const kolom = [];
+  availableMonths.forEach(({ month, year }) => {
+    if (selectedMonth !== 'all' && `${month}-${year}` !== selectedMonth) return;
 
-    const handleSubmitAll = async () => {
-        const unansweredQuestions = indikators.filter(indicator => 
-            answer[indicator.indikator_id] === null || answer[indicator.indikaotr_id] === undefined
-        );
+    for (let minggu = 1; minggu <= 4; minggu++) {
+      kolom.push({
+        key: `${month}-${year}-m${minggu}`,
+        label: `M${minggu}`,
+        month,
+        year,
+        minggu,
+      });
+    }
+  });
 
-       if (unansweredQuestions.length > 0) {
-            Swal.fire({
-              title: '⚠️ Belum Lengkap',
-              html: `<div class="text-left">
-                <p class="mb-3">Masih ada <strong>${unansweredQuestions.length}</strong> pertanyaan yang belum dijawab:</p>
-                <ul class="list-disc list-inside text-sm text-gray-600 space-y-1">
-                  ${unansweredQuestions.slice(0, 3).map((q, i) => 
-                    `<li>Pertanyaan ${indikators.findIndex(ind => ind.indikator_id === q.indikator_id) + 1}: ${q.indikator_isi.substring(0, 50)}...</li>`
-                  ).join('')}
-                  ${unansweredQuestions.length > 3 ? `<li class="text-gray-500">... dan ${unansweredQuestions.length - 3} lainnya</li>` : ''}
-                </ul>
-              </div>`,
-              icon: 'warning',
-              confirmButtonText: 'Lanjutkan Mengisi',
-              customClass: {
-                confirmButton: 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200',
-                popup: 'rounded-2xl shadow-2xl border-0'
-              },
-              buttonsStyling: false
-            });
-            return;
-          }
+  const groupedByMonth = {};
+  kolom.forEach(k => {
+    const key = `${k.month}-${k.year}`;
+    if (!groupedByMonth[key]) groupedByMonth[key] = [];
+    groupedByMonth[key].push(k);
+  });
 
-            // Show confirmation dialog
-              const result = await Swal.fire({
-                title: '🚀 Kirim Data Monitoring?',
-                html: `<div class="text-left">
-                  <p class="mb-3">Anda akan mengirim data monitoring untuk <strong>Minggu ${minggu}</strong></p>
-                  <p class="text-sm text-gray-600">Total jawaban: <strong>${indikators.length}</strong> pertanyaan</p>
-                  <p class="text-xs text-gray-500 mt-2">⚠️ Data yang sudah dikirim tidak dapat diubah</p>
-                </div>`,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: '✅ Ya, Kirim Sekarang',
-                cancelButtonText: '❌ Batal',
-                customClass: {
-                  confirmButton: 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200 mr-3',
-                  cancelButton: 'bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200',
-                  popup: 'rounded-2xl shadow-2xl border-0'
-                },
-                buttonsStyling: false
-              });
-          
-              if (!result.isConfirmed) return;
-          
-              setIsSubmitting(true);
+  const handleYearChange = (year) => {
+    setSelectedYear(year);
+    setSelectedMonth('all'); // Reset month filter when year changes
+  };
 
-            try {
-                 // Submit all answers
-                 const submitPromises = indikators.map(indikator => {
-                   const answer = answers[indikator.indikator_id];
-                   const data = {
-                     indikator_id: indikator.indikator_id,
-                     minggu: parseInt(minggu),
-                     nilai: answer.jawaban,
-                   };
-                   return submitAmbulance(token, data);
-                 });
-           
-                 await Promise.all(submitPromises);
-           
-                 // Show success message with summary
-                 const resultHtml = Object.values(answers)
-                   .map((item, index) =>
-                     `<div class="mb-4 p-4 bg-gray-50 rounded-lg border-l-4 ${item.jawaban === 1 ? 'border-green-500' : 'border-red-500'}">
-                       <div class="font-semibold text-gray-800 mb-2">${index + 1}. ${item.pertanyaan}</div>
-                       <div class="flex items-center gap-2">
-                         <span class="text-sm text-gray-600">Jawaban:</span>
-                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${item.jawaban === 1 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                           ${item.jawaban === 1 ? '✓' : '✗'} ${item.jawaban_text}
-                         </span>
-                       </div>
-                     </div>`
-                   )
-                   .join('');
-           
-                 await Swal.fire({
-                   title: `<div class="text-2xl font-bold text-gray-800 mb-2">🎉 Data Berhasil Dikirim!</div>`,
-                   html: `
-                     <div class="text-left">
-                       <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                         <div class="flex items-center gap-2 mb-2">
-                           <div class="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                             <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                             </svg>
-                           </div>
-                           <span class="font-semibold text-green-800">Minggu ${minggu} - Lengkap</span>
-                         </div>
-                         <p class="text-sm text-green-700">Data monitoring telah tersimpan dalam sistem</p>
-                       </div>
-                       <h4 class="font-semibold text-gray-800 mb-3">📋 Rekap Jawaban:</h4>
-                       <div class="max-h-96 overflow-y-auto">${resultHtml}</div>
-                     </div>
-                   `,
-                   icon: 'success',
-                   confirmButtonText: '🏠 Kembali ke Dashboard',
-                   width: 700,
-                   scrollbarPadding: false,
-                   showClass: {
-                     popup: 'animate__animated animate__fadeInDown animate__faster'
-                   },
-                   hideClass: {
-                     popup: 'animate__animated animate__fadeOutUp animate__faster'
-                   },
-                   customClass: {
-                     title: 'text-left',
-                     htmlContainer: 'text-left',
-                     confirmButton: 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200',
-                     popup: 'rounded-2xl shadow-2xl border-0'
-                   },
-                   buttonsStyling: false
-                 });
-           
-                 // Call onCancel to go back to main view
-                 onCancel && onCancel();
-           
-               } catch (err) {
-                 console.error('Gagal submit:', err.response?.data?.message || err.message);
-                 
-                 Swal.fire({
-                   title: '❌ Gagal Mengirim Data',
-                   html: `
-                     <div class="text-left">
-                       <p class="mb-3">Terjadi kesalahan saat mengirim data monitoring:</p>
-                       <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                         <p class="text-sm text-red-700">${err.response?.data?.message || err.message}</p>
-                       </div>
-                       <p class="text-sm text-gray-600 mt-3">Silakan periksa koneksi internet dan coba lagi.</p>
-                     </div>
-                   `,
-                   icon: 'error',
-                   confirmButtonText: '🔄 Coba Lagi',
-                   customClass: {
-                     confirmButton: 'bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-3 px-6 rounded-lg shadow-lg transform hover:scale-105 transition-all duration-200',
-                     popup: 'rounded-2xl shadow-2xl border-0'
-                   },
-                   buttonsStyling: false
-                 });
-               } finally {
-                 setIsSubmitting(false);
-               }
-             };
-           
-             const getCompletionStats = () => {
-               const answered = Object.values(answers).filter(answer => answer !== null && answer !== undefined).length;
-               const total = indikators.length;
-               return { answered, total, percentage: total > 0 ? (answered / total) * 100 : 0 };
-             };
-           
-             const isWeekCompleted = completedWeeks.includes(parseInt(minggu));
-           
-             if (loading) {
-               return (
-                 <div className="flex items-center justify-center p-8 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
-                   <div className="flex items-center gap-3">
-                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-                     <span className="text-gray-600 font-medium">Memuat data indikator...</span>
-                   </div>
-                 </div>
-               );
-             }
-           
-             if (errorMsg) {
-               return (
-                 <div className="p-6 bg-red-50 border border-red-200 rounded-2xl shadow-lg">
-                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                       </svg>
-                     </div>
-                     <p className="text-red-700 font-semibold">{errorMsg}</p>
-                   </div>
-                 </div>
-               );
-             }
-           
-             if (!minggu) {
-               return (
-                 <div className="p-6 bg-yellow-50 border border-yellow-200 rounded-2xl shadow-lg">
-                   <div className="flex items-center gap-3">
-                     <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
-                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                       </svg>
-                     </div>
-                     <p className="text-yellow-700 font-semibold">Minggu belum dipilih</p>
-                   </div>
-                 </div>
-               );
-             }
-            
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const params = new URLSearchParams();
 
-             const currentIndikator = indikators[currentIndex];
-             const completionStats = getCompletionStats();
-             const currentAnswer = answers[currentIndikator?.indikator_id];
+      if (selectedYear !== 'all') params.append('tahun', selectedYear);
+      if (selectedMonth !== 'all') {
+        const [bulan] = selectedMonth.split('-');
+        params.append('bulan', parseInt(bulan) + 1); // +1 karena index bulan 0-11
+      }
 
-           return (
-    <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-      {/* Progress Bar */}
-      <div className="bg-gray-100 h-3">
-        <div 
-          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-500 ease-out"
-          style={{ width: `${completionStats.percentage}%` }}
-        ></div>
+      const fullUrl = `${import.meta.env.VITE_API_URL}/api/ambulance/export?${params.toString()}`;
+      console.log("Mengekspor ke URL:", fullUrl);
+
+      const response = await fetch(fullUrl, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Gagal mengekspor data');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ambulance.xlsx';
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert('Export gagal');
+    }
+  };
+
+  return (
+    <div className="w-full">
+      {/* Filter Section */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6 mb-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 bg-gradient-to-r from-purple-400 to-pink-500 rounded-lg flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.414A1 1 0 013 6.707V4z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-800">Filter Data</h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Year Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter Tahun:
+            </label>
+            <select
+              value={selectedYear}
+              onChange={(e) => handleYearChange(e.target.value)}
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            >
+              <option value="all">Semua Tahun</option>
+              {allYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Month Filter */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Filter Bulan:
+            </label>
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              disabled={availableMonths.length === 0}
+            >
+              <option value="all">Semua Bulan</option>
+              {availableMonths.map(({ month, year }) => (
+                <option key={`${month}-${year}`} value={`${month}-${year}`}>
+                  {getMonthYearLabel({ month, year })}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="flex flex-col items-start space-y-2">
+          <label className='block text-sm font-medium text-gray-700 mt-2'>Download Data :</label>
+          <button
+            onClick={handleExport}
+            className="px-4 py-2 bg-green-500 text-white rounded cursor-pointer"
+          >
+            Export Excel
+          </button>
+        </div>
+
+        {/* Data Summary */}
+        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="flex items-center gap-2 text-blue-800">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-sm font-medium">
+              Menampilkan {filteredData.length} jawaban dari {indikatorList.length} indikator
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div className="p-6 sm:p-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center relative">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      {/* Table Section */}
+      <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full table-auto border-collapse">
+            <thead>
+              <tr className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+                <th rowSpan="2" className="border border-white/20 p-2 sm:p-4 text-center text-xs sm:text-xl font-semibold bg-blue-600">
+                  No
+                </th>
+                <th rowSpan="2" className="border border-white/20 p-2 sm:p-4 text-center text-sm sm:text-2xl font-semibold min-w-[200px] sm:min-w-[470px] bg-blue-600">
+                  Indikator
+                </th>
+                {Object.entries(groupedByMonth).map(([key]) => {
+                  const [month, year] = key.split('-').map(Number);
+                  return (
+                    <th key={key} colSpan={4} className="border border-white/20 p-2 sm:p-4 text-center font-semibold text-xs sm:text-xl bg-blue-600">
+                      {monthNames[month]}
+                    </th>
+                  );
+                })}
+              </tr>
+              <tr className="bg-gradient-to-r from-blue-400 to-indigo-400 text-white">
+                {Object.entries(groupedByMonth).map(([key]) =>
+                  [1, 2, 3, 4].map((minggu) => (
+                    <th
+                      key={`${key}-m${minggu}`}
+                      className="border border-white/20 p-1 sm:p-3 text-center font-medium text-[10px] sm:text-base bg-blue-500 min-w-[48px] sm:min-w-[80px]"
+                    >
+                      {minggu}
+                    </th>
+                  ))
+                )}
+              </tr>
+            </thead>
+
+            <tbody>
+              {indikatorList.length === 0 ? (
+                <tr>
+                  <td colSpan={2 + kolom.length} className="p-8 text-center text-gray-500">
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      </svg>
+                      <span>Tidak ada data untuk filter yang dipilih</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                indikatorList.map((indikator, index) => (
+                  <tr key={indikator.indikator_id} className="hover:bg-blue-50 transition-colors duration-150">
+                    <td className="border border-gray-200 text-center p-2 sm:p-4 text-xs sm:text-sm bg-gray-50 font-medium">
+                      {index + 1}
+                    </td>
+                    <td className="border border-gray-200 p-2 sm:p-4 text-xs sm:text-sm text-gray-800 font-medium">
+                      {indikator.indikator_isi}
+                    </td>
+                    {kolom.map(({ month, year, minggu }, i) => {
+                      const item = filteredData.find(d =>
+                        d.indikator_id.toString() === indikator.indikator_id.toString() &&
+                        getMonthYear(d.waktu).month === month &&
+                        getMonthYear(d.waktu).year === year &&
+                        d.minggu === minggu
+                      );
+
+                      let cellContent, cellClass;
+                      if (!item) {
+                        cellContent = '-';
+                        cellClass = 'text-gray-400';
+                      } else if (item.nilai === 1) {
+                        cellContent = (
+                          <div className="flex items-center justify-center">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-green-100 rounded-full flex items-center justify-center">
+                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                        );
+                        cellClass = 'text-green-600';
+                      } else {
+                        cellContent = (
+                          <div className="flex items-center justify-center">
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 bg-red-100 rounded-full flex items-center justify-center">
+                              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </div>
+                          </div>
+                        );
+                        cellClass = 'text-red-600';
+                      }
+
+                      return (
+                        <td key={`${indikator.indikator_id}-${i}`} className={`border border-gray-200 text-center p-1 sm:p-4 text-xs sm:text-sm ${cellClass}`}>
+                          {cellContent}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Statistics Summary */}
+      {indikatorList.length > 0 && (
+        <div className="mt-6 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-lg flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              {isWeekCompleted && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              )}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold text-gray-800">Minggu {minggu}</h3>
-                {isWeekCompleted && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                    ✓ Selesai
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-500">
-                Pertanyaan {currentIndex + 1} dari {indikators.length}
-              </p>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-800">Ringkasan Statistik</h3>
           </div>
           
-          <div className="text-right">
-            <div className="text-2xl font-bold text-blue-600">{completionStats.answered}/{completionStats.total}</div>
-            <div className="text-xs text-gray-500">Terjawab</div>
-          </div>
-        </div>
-
-        {/* Completion Status */}
-        <div className="mb-6 bg-gray-50 rounded-xl p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Progress Pengisian:</span>
-            <span className="text-sm font-semibold text-blue-600">{Math.round(completionStats.percentage)}%</span>
-          </div>
-          <div className="mt-2 flex gap-1">
-            {indikators.map((_, index) => (
-              <div
-                key={index}
-                className={`h-2 flex-1 rounded-full transition-all duration-300 ${
-                  answers[indikators[index]?.indikator_id] !== null && answers[indikators[index]?.indikator_id] !== undefined
-                    ? 'bg-green-400' 
-                    : index === currentIndex 
-                    ? 'bg-blue-400' 
-                    : 'bg-gray-200'
-                }`}
-              ></div>
-            ))}
-          </div>
-        </div>
-
-        {/* Question */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                <span className="text-white font-bold text-sm">{currentIndex + 1}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+              <div className="text-2xl font-bold text-blue-600">{indikatorList.length}</div>
+              <div className="text-sm text-blue-700">Total Indikator</div>
+            </div>
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="text-2xl font-bold text-green-600">
+                {filteredData.filter(d => d.nilai === 1).length}
               </div>
-              <p className="text-lg font-medium text-gray-800 leading-relaxed">
-                {currentIndikator?.indikator_isi}
-              </p>
+              <div className="text-sm text-green-700">Jawaban Ya</div>
+            </div>
+            <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+              <div className="text-2xl font-bold text-red-600">
+                {filteredData.filter(d => d.nilai === 0).length}
+              </div>
+              <div className="text-sm text-red-700">Jawaban Tidak</div>
             </div>
           </div>
         </div>
-
-        {/* Answer Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          <button
-            onClick={() => handleAnswer(1)}
-            className={`group flex-1 relative overflow-hidden font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 ${
-              currentAnswer?.jawaban === 1
-                ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white ring-4 ring-green-200'
-                : 'bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span className="text-lg">Ya</span>
-              {currentAnswer?.jawaban === 1 && (
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              )}
-            </div>
-          </button>
-          
-          <button
-            onClick={() => handleAnswer(0)}
-            className={`group flex-1 relative overflow-hidden font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 ${
-              currentAnswer?.jawaban === 0
-                ? 'bg-gradient-to-r from-red-600 to-pink-600 text-white ring-4 ring-red-200'
-                : 'bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white'
-            }`}
-          >
-            <div className="flex items-center justify-center gap-3">
-              <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <span className="text-lg">Tidak</span>
-              {currentAnswer?.jawaban === 0 && (
-                <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              )}
-            </div>
-          </button>
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="flex justify-between items-center mb-6">
-          <button
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              currentIndex === 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md transform hover:-translate-y-0.5'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          
-          </button>
-
-          <div className="flex items-center gap-2">
-            {indikators.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-8 h-8 rounded-full text-sm font-medium transition-all duration-200 ${
-                  index === currentIndex
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : answers[indikators[index]?.indikator_id] !== null && answers[indikators[index]?.indikator_id] !== undefined
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
-              >
-                {answers[indikators[index]?.indikator_id] !== null && answers[indikators[index]?.indikator_id] !== undefined ? (
-                  <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  index + 1
-                )}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={handleNext}
-            disabled={currentIndex === indikators.length - 1}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              currentIndex === indikators.length - 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md transform hover:-translate-y-0.5'
-            }`}
-          >
-        
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Submit Button */}
-        <div className="border-t pt-6">
-          <button
-            onClick={handleSubmitAll}
-            disabled={completionStats.answered < completionStats.total || isSubmitting}
-            className={`w-full flex items-center justify-center gap-3 py-4 px-6 rounded-xl font-semibold text-lg transition-all duration-200 ${
-              completionStats.answered < completionStats.total
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : isSubmitting
-                ? 'bg-blue-400 text-white cursor-wait'
-                : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-1'
-            }`}
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Mengirim Data...
-              </>
-            ) : completionStats.answered < completionStats.total ? (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                Jawab Semua Pertanyaan ({completionStats.total - completionStats.answered} tersisa)
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-                Kirim Data Monitoring
-              </>
-            )}
-          </button>
-          
-          {completionStats.answered < completionStats.total && (
-            <p className="text-center text-sm text-gray-500 mt-3">
-              Silakan jawab semua pertanyaan sebelum mengirim data
-            </p>
-          )}
-        </div>
-
-        {/* Cancel Button */}
-        <div className="mt-4">
-          <button
-            onClick={onCancel}
-            className="w-full py-3 px-4 text-gray-600 hover:text-gray-800 font-medium transition-colors duration-200"
-          >
-            ← Kembali ke Dashboard
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   );
-    }
+};
 
-    export default AmbulanceTable
-
-
+export default AmbulanceTable;
