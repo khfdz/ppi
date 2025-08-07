@@ -64,7 +64,7 @@ const getIndikatorById = async (req, res) => {
 // CREATE new indikator
 const createIndikator = async (req, res) => {
     try {
-        const { indikator_jenis, indikator_isi } = req.body;
+        const { indikator_jenis, indikator_isi, indikator_tipe } = req.body;
         
         // Validasi input
         if (!indikator_jenis || !indikator_isi) {
@@ -75,8 +75,8 @@ const createIndikator = async (req, res) => {
         }
         
         const [result] = await pool.execute(
-            'INSERT INTO indikators (indikator_jenis, indikator_isi) VALUES (?, ?)',
-            [indikator_jenis, indikator_isi]
+            'INSERT INTO indikators (indikator_jenis, indikator_isi, indikator_tipe) VALUES (?, ?, ?)',
+            [indikator_jenis, indikator_isi, indikator_tipe]
         );
         
         res.status(201).json({
@@ -85,7 +85,8 @@ const createIndikator = async (req, res) => {
             data: {
                 indikator_id: result.insertId,
                 indikator_jenis,
-                indikator_isi
+                indikator_isi,
+                indikator_tipe
             }
         });
     } catch (error) {

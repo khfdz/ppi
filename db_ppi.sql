@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Aug 06, 2025 at 08:29 AM
+-- Generation Time: Aug 07, 2025 at 08:48 AM
 -- Server version: 8.4.3
 -- PHP Version: 8.3.16
 
@@ -30,33 +30,173 @@ SET time_zone = "+00:00";
 CREATE TABLE `indikators` (
   `indikator_id` int NOT NULL,
   `indikator_jenis` text NOT NULL,
-  `indikator_isi` varchar(255) NOT NULL
+  `indikator_isi` varchar(255) NOT NULL,
+  `indikator_tipe` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `indikators`
 --
 
-INSERT INTO `indikators` (`indikator_id`, `indikator_jenis`, `indikator_isi`) VALUES
-(1, 'MBTJ', 'Tersedia tempat limbah benda tajam yang sesuai'),
-(2, 'MBTJ', 'Tempat limbah benda tajam diletakkan di tempat yang aman'),
-(3, 'MBTJ', 'Tempat limbah benda tajam dirakit dengan benar'),
-(4, 'MBTJ', 'Isi limbah benda tajam tidak lebih dari 3/4 penuh'),
-(5, 'MBTJ', 'Tidak ada limbah benda tajam yang keluar dari tempat sampah'),
-(6, 'MBTJ', 'Limbah tajam langsung dibuang ke tempat limbah benda tajam'),
-(7, 'MBTJ', 'Jika sudah 3/4 penuh, tempat limbah tajam ditutup rapat dan dimasukkan ke tempat limbah infeksius'),
-(8, 'MBTJ', 'Memastikan setiap tindakan yang menggunakan jarum dibuang ke tempat safetybox'),
-(9, 'MBTJ', 'Memastikan setiap tindakan yang menggunakan jarum dibuang ke tempat safetybox'),
-(10, 'MPKDA', 'Pembersihan rutin mobil ambulance dilakukan 1 minggu sekali oleh shift sore'),
-(11, 'MPKDA', 'Apabila mobil dan peralatan di dalam nya sudah terpakai dan tercemar oleh cairan tubuh, darah, urine pasien maka dilakukan dekontaminasi'),
-(12, 'MPKDA', 'Proses dekontaminasi dilakukan di samping IGD dengan menggunakan bahan disinfektan yang mengandung priseft 0.5%'),
-(13, 'MPKDA', 'Petugas mencuci tangan'),
-(14, 'MPKDA', 'Petugas menggunakan alat pelindung diri masker dan sarung tangan'),
-(15, 'MPKDA', 'Petugas mengeluarkan stretcher dari mobil ambulance lalu melepas linen'),
-(16, 'MPKDA', 'Petugas menyapu ruangan ambulance dari sisi terjauh, sampai di bawah tempat duduk'),
-(17, 'MPKDA', 'Petugas mulai membersihkan sisi luar mobil dengan air mengalir, cuci dan lap dengan sabun kemudian bilas kembali dengan air mengalir dan keringkan kembali'),
-(18, 'MPKDA', 'Petugas merapikan kembali ruangan mobil ambulance dan semua alat-alat di dalamnya'),
-(19, 'MPKDA', 'Petugas melepaskan alat pelindung diri dan mencuci tangan');
+INSERT INTO `indikators` (`indikator_id`, `indikator_jenis`, `indikator_isi`, `indikator_tipe`) VALUES
+(1, 'MBTJ', 'Tersedia tempat limbah benda tajam yang sesuai', ''),
+(2, 'MBTJ', 'Tempat limbah benda tajam diletakkan di tempat yang aman', ''),
+(3, 'MBTJ', 'Tempat limbah benda tajam dirakit dengan benar', ''),
+(4, 'MBTJ', 'Isi limbah benda tajam tidak lebih dari 3/4 penuh', ''),
+(5, 'MBTJ', 'Tidak ada limbah benda tajam yang keluar dari tempat sampah', ''),
+(6, 'MBTJ', 'Limbah tajam langsung dibuang ke tempat limbah benda tajam', ''),
+(7, 'MBTJ', 'Jika sudah 3/4 penuh, tempat limbah tajam ditutup rapat dan dimasukkan ke tempat limbah infeksius', ''),
+(8, 'MBTJ', 'Memastikan setiap tindakan yang menggunakan jarum dibuang ke tempat safetybox', ''),
+(9, 'MBTJ', 'Memastikan setiap tindakan yang menggunakan jarum dibuang ke tempat safetybox', ''),
+(10, 'MPKDA', 'Pembersihan rutin mobil ambulance dilakukan 1 minggu sekali oleh shift sore', ''),
+(11, 'MPKDA', 'Apabila mobil dan peralatan di dalam nya sudah terpakai dan tercemar oleh cairan tubuh, darah, urine pasien maka dilakukan dekontaminasi', ''),
+(12, 'MPKDA', 'Proses dekontaminasi dilakukan di samping IGD dengan menggunakan bahan disinfektan yang mengandung priseft 0.5%', ''),
+(13, 'MPKDA', 'Petugas mencuci tangan', ''),
+(14, 'MPKDA', 'Petugas menggunakan alat pelindung diri masker dan sarung tangan', ''),
+(15, 'MPKDA', 'Petugas mengeluarkan stretcher dari mobil ambulance lalu melepas linen', ''),
+(16, 'MPKDA', 'Petugas menyapu ruangan ambulance dari sisi terjauh, sampai di bawah tempat duduk', ''),
+(17, 'MPKDA', 'Petugas mulai membersihkan sisi luar mobil dengan air mengalir, cuci dan lap dengan sabun kemudian bilas kembali dengan air mengalir dan keringkan kembali', ''),
+(18, 'MPKDA', 'Petugas merapikan kembali ruangan mobil ambulance dan semua alat-alat di dalamnya', ''),
+(19, 'MPKDA', 'Petugas melepaskan alat pelindung diri dan mencuci tangan', ''),
+(20, 'STPM', 'Kursi, meja, lemari, tampak bersih dan kondisi baik', 'Kebersihan Secara Umum'),
+(21, 'STPM', 'Troli tindakan tampak bersih', 'Kebersihan Secara Umum'),
+(22, 'STPM', 'Troli tindakan dibersihkan dengan disinfektan setiap hari dan jika terkontaminasi', 'Kebersihan Secara Umum'),
+(23, 'STPM', 'Lantai bersih dan dalam kondisi baik', 'Kebersihan Secara Umum'),
+(24, 'STPM', 'Tidak ada debu dipermukaan alat', 'Kebersihan Secara Umum'),
+(25, 'STPM', 'Tirai jendela kondisi bersih dan baik', 'Kebersihan Secara Umum'),
+(26, 'STPM', 'Tirai jendela kondisi bersih dan baik', 'Hand Hygiene'),
+(27, 'STPM', 'Kepathuan petugas cuci tangan terhadap 5 momen', 'Hand Hygiene'),
+(28, 'STPM', 'Tersedia leaflet kebersihan tangan di unit pelayanan', 'Hand Hygiene'),
+(29, 'STPM', 'Tersedia wastafel untuk cuci tangan', 'Hand Hygiene'),
+(30, 'STPM', 'Kran air berfungsi dengan baik', 'Hand Hygiene'),
+(31, 'STPM', 'Tersedia sabun cair disetiap wastafel', 'Hand Hygiene'),
+(32, 'STPM', 'Tersedia alkohol hand rub disetiap ruangan', 'Hand Hygiene'),
+(33, 'STPM', 'Tersedia tempat sampah infeksius dan non infeksius', 'Hand Hygiene'),
+(34, 'STPM', 'Tersedia poster cuci tangan disetiap wastafel', 'Hand Hygiene'),
+(35, 'STPM', 'Tersedia hand rub disetiap troli', 'Hand Hygiene'),
+(36, 'STPM', 'Tersedia tempat sampah di dekat wastafel', 'Hand Hygiene'),
+(37, 'STPM', 'Tersedia tempat sampah infeksius dan non infeksius', 'Hand Hygiene'),
+(38, 'STPM', 'Tersedia poster cuci tangan disetiap wastafel', 'Hand Hygiene'),
+(39, 'STPM', 'Ada SPO penggunaan apd', 'APD'),
+(40, 'STPM', 'Tersedia nurse cap', 'APD'),
+(41, 'STPM', 'Masker bedah', 'APD'),
+(42, 'STPM', 'Masker N95', 'APD'),
+(43, 'STPM', 'Sarung tangan', 'APD'),
+(44, 'STPM', 'Apron plastik', 'APD'),
+(45, 'STPM', 'Kacamata goggle', 'APD'),
+(46, 'STPM', 'Sepatu boot', 'APD'),
+(47, 'STPM', 'Petugas menerapkan SPO APD dengan baik', 'APD'),
+(48, 'STPM', 'Menyimpan apd dilakukan dengan benar', 'APD'),
+(49, 'STPM', 'Ada SPO penatalaksaan Limbah', 'Limbah'),
+(50, 'STPM', 'Petugas menerapkan spo pembuangan limbah dengan baik', 'Limbah'),
+(51, 'STPM', 'Tempat sampah menggunakan pedal', 'Limbah'),
+(52, 'STPM', 'Tempat sampah diberi label sesuai jenis sampah infeksius / non infeksius', 'Limbah'),
+(53, 'STPM', 'Tersedia kantong sampah plastik hitam untuk tempat sampah non infeksius / domestik', 'Limbah'),
+(54, 'STPM', 'Tersedia kantong sampah warna kuning untuk sampah infeksius', 'Limbah'),
+(55, 'STPM', 'Tempat sampah dalam kondisi baik', 'Limbah'),
+(56, 'STPM', 'Sampah tidak lebih 3/4 penuh', 'Limbah'),
+(57, 'STPM', 'Sampah infeksius dan non infeksius dipisahkan', 'Limbah'),
+(58, 'STPM', 'Petugas yang menangani sampah telat mendapat sosialisasi ppi', 'Limbah'),
+(59, 'STPM', 'Tersedia tempat limbah benda tajam yang sesuai', 'Limbah'),
+(60, 'STPM', 'Tempat limbah benda tajam diletakkan di tempat yang aman', 'Limbah'),
+(61, 'STPM', 'Tempat limbah benda tajam difiksasi dengan benar', 'Limbah'),
+(62, 'STPM', 'Isi limbah benda tajam tidak lebih dari 3/4 penuh', 'Limbah'),
+(63, 'STPM', 'Tidak ada limbah benda tajam langsung dibuang ke tempat limbah benda tajam', 'Limbah'),
+(64, 'STPM', 'Limbah cair (darah, cairan tubuh pasien / cairan pleura / cairan ascites, dll) dibuang ke spoelhoek', 'Limbah'),
+(65, 'STPM', 'Ada SPO penatalaksanaan linen', 'Linen'),
+(66, 'STPM', 'Petugas menerapkan SPO penatalaksanaan linen dengan baik', 'Linen'),
+(67, 'STPM', 'Ada dokumentasi linen', 'Linen'),
+(68, 'STPM', 'Penyimpanan linen tertata rapi di lemari tutup', 'Linen'),
+(69, 'STPM', 'Tersedia tempat sampah linen infeksius dan non infeksius', 'Linen'),
+(70, 'STPM', 'Tersedia box / lemari tertutup rapat tempat penyimpanan alat steril', 'Perawatan Peralatan Pasien'),
+(71, 'STPM', 'Temperatur ruangan 20-40° dan kelembaban 40-60%', 'Perawatan Peralatan Pasien'),
+(72, 'STPM', 'Alat steril disimpan rapi', 'Perawatan Peralatan Pasien'),
+(73, 'STPM', 'Alat selalu siap pakai', 'Perawatan Peralatan Pasien'),
+(74, 'STPM', 'Terdapat tanda indikator pada alat steril', 'Perawatan Peralatan Pasien'),
+(75, 'STPM', 'Semua petugas ruangan telah mendapatkan edukasi tentang tata cara etika batuk', 'Etika Batuk'),
+(76, 'STPM', 'Tersedia leaflet etika batuk di unit pelayanan', 'Etika Batuk'),
+(77, 'STPM', 'Petugas menerapkan SPO etika batuk', 'Etika Batuk'),
+(78, 'STPM', 'Petugas mencuci tangan setelah batuk / bersin', 'Etika Batuk'),
+(79, 'STPM', 'Petugas membuang tisu yang telah digunakan saat batuk / bersin', 'Etika Batuk'),
+(80, 'STPM', 'Tersedia tempat sampah untuk membuang tisu', 'Etika Batuk'),
+(81, 'STPM', 'Tersedia tempat sampah untuk membuang tisu', 'Penyuntikan Yang Aman'),
+(82, 'STPM', 'Ada SPO praktek penyuntikan yang aman', 'Penyuntikan Yang Aman'),
+(83, 'STPM', 'Petugas menerapkan SPO praktek penyuntikan yang aman', 'Penyuntikan Yang Aman'),
+(84, 'STPM', 'Petugas melakukan identifikasi pasien', 'Penyuntikan Yang Aman'),
+(85, 'STPM', 'Tersedia ruangan dispensing di unit instalasi farmasi', 'Penyuntikan Yang Aman'),
+(86, 'STPM', 'Petugas menjelaskan prosedur yang akan dilakukan', 'Penyuntikan Yang Aman'),
+(87, 'STPM', 'Obat di spuit diberi label sesuai prosedur', 'Penyuntikan Yang Aman'),
+(88, 'STPM', 'Obat disimpan di lemari pendingin 2-8°c atau suhu ruang yang sesuai indikator obat', 'Penyuntikan Yang Aman'),
+(89, 'STPM', 'Tersedia lemari pendingin tempat penyimpanan obat (obat-obat tertentu)', 'Penyuntikan Yang Aman'),
+(90, 'STPM', 'Petugas melakukan hand hygiene sebelum tindakan', 'Penyuntikan Yang Aman'),
+(91, 'STPM', 'Petugas melakukan swab alkohol pada karet penutup vial sebelum menusuk vial', 'Penyuntikan Yang Aman'),
+(92, 'STPM', 'Petugas menggunakan 1 spuit untuk satu jenis obat (single dosase)', 'Penyuntikan Yang Aman'),
+(93, 'STPM', 'Petugas menggunakan APD saat mencampur obat', 'Penyuntikan Yang Aman'),
+(94, 'STPM', 'Petugas menggunakan teknik aseptik dalam pencampuran obat', 'Penyuntikan Yang Aman'),
+(95, 'STPM', 'Petugas membuang spuit tanpa needle pada sampah infeksius', 'Penyuntikan Yang Aman'),
+(96, 'STPM', 'Petugas membuang needle dan pecahan ampul pada safety box', 'Penyuntikan Yang Aman'),
+(97, 'STPM', 'Petugas melakukan hand hygiene setelah tindakan', 'Penyuntikan Yang Aman'),
+(98, 'STPM', 'Kursi, meja, lemari, tampak bersih dan kondisi baik', 'Kebersihan Secara Umum'),
+(99, 'STPM', 'Troli tindakan tampak bersih', 'Kebersihan Secara Umum'),
+(100, 'STPM', 'Troli tindakan dibersihkan dengan disinfektan setiap hari dan jika terkontaminasi', 'Kebersihan Secara Umum'),
+(101, 'STPM', 'Lantai bersih dan dalam kondisi baik', 'Kebersihan Secara Umum'),
+(102, 'STPM', 'Tidak ada debu dipermukaan alat', 'Kebersihan Secara Umum'),
+(103, 'STPM', 'Tirai jendela kondisi bersih dan baik', 'Kebersihan Secara Umum'),
+(104, 'STPM', 'Tirai jendela kondisi bersih dan baik', 'Hand Hygiene'),
+(105, 'STPM', 'Kepathuan petugas cuci tangan terhadap 5 momen', 'Hand Hygiene'),
+(106, 'STPM', 'Tersedia leaflet kebersihan tangan di unit pelayanan', 'Hand Hygiene'),
+(107, 'STPM', 'Tersedia wastafel untuk cuci tangan', 'Hand Hygiene'),
+(108, 'STPM', 'Kran air berfungsi dengan baik', 'Hand Hygiene'),
+(109, 'STPM', 'Tersedia sabun cair disetiap wastafel', 'Hand Hygiene'),
+(110, 'STPM', 'Tersedia alkohol hand rub disetiap ruangan', 'Hand Hygiene'),
+(111, 'STPM', 'Tersedia tempat sampah infeksius dan non infeksius', 'Hand Hygiene'),
+(112, 'STPM', 'Tersedia poster cuci tangan disetiap wastafel', 'Hand Hygiene'),
+(113, 'STPM', 'Tersedia hand rub disetiap troli', 'Hand Hygiene'),
+(114, 'STPM', 'Tersedia tempat sampah di dekat wastafel', 'Hand Hygiene'),
+(115, 'STPM', 'Tersedia tempat sampah infeksius dan non infeksius', 'Hand Hygiene'),
+(116, 'STPM', 'Tersedia poster cuci tangan disetiap wastafel', 'Hand Hygiene'),
+(117, 'STPM', 'Ada SPO penggunaan apd', 'APD'),
+(118, 'STPM', 'Tersedia nurse cap', 'APD'),
+(119, 'STPM', 'Masker bedah', 'APD'),
+(120, 'STPM', 'Masker N95', 'APD'),
+(121, 'STPM', 'Sarung tangan', 'APD'),
+(122, 'STPM', 'Apron plastik', 'APD'),
+(123, 'STPM', 'Kacamata goggle', 'APD'),
+(124, 'STPM', 'Sepatu boot', 'APD'),
+(125, 'STPM', 'Petugas menerapkan SPO APD dengan baik', 'APD'),
+(126, 'STPM', 'Menyimpan apd dilakukan dengan benar', 'APD'),
+(127, 'STPM', 'Ada SPO penatalaksaan Limbah', 'Limbah'),
+(128, 'STPM', 'Petugas menerapkan spo pembuangan limbah dengan baik', 'Limbah'),
+(129, 'STPM', 'Tempat sampah menggunakan pedal', 'Limbah'),
+(130, 'STPM', 'Tempat sampah diberi label sesuai jenis sampah infeksius / non infeksius', 'Limbah'),
+(131, 'STPM', 'Tersedia kantong sampah plastik hitam untuk tempat sampah non infeksius / domestik', 'Limbah'),
+(132, 'STPM', 'Tersedia kantong sampah warna kuning untuk sampah infeksius', 'Limbah'),
+(133, 'STPM', 'Tempat sampah dalam kondisi baik', 'Limbah'),
+(134, 'STPM', 'Sampah tidak lebih 3/4 penuh', 'Limbah'),
+(135, 'STPM', 'Sampah infeksius dan non infeksius dipisahkan', 'Limbah'),
+(136, 'STPM', 'Petugas yang menangani sampah telat mendapat sosialisasi ppi', 'Limbah'),
+(137, 'STPM', 'Tersedia tempat limbah benda tajam yang sesuai', 'Limbah'),
+(138, 'STPM', 'Tempat limbah benda tajam diletakkan di tempat yang aman', 'Limbah'),
+(139, 'STPM', 'Tempat limbah benda tajam difiksasi dengan benar', 'Limbah'),
+(140, 'STPM', 'Isi limbah benda tajam tidak lebih dari 3/4 penuh', 'Limbah'),
+(141, 'STPM', 'Tidak ada limbah benda tajam langsung dibuang ke tempat limbah benda tajam', 'Limbah'),
+(142, 'STPM', 'Limbah cair (darah, cairan tubuh pasien / cairan pleura / cairan ascites, dll) dibuang ke spoelhoek', 'Limbah'),
+(143, 'STPM', 'Ada SPO penatalaksanaan linen', 'Linen'),
+(144, 'STPM', 'Petugas menerapkan SPO penatalaksanaan linen dengan baik', 'Linen'),
+(145, 'STPM', 'Ada dokumentasi linen', 'Linen'),
+(146, 'STPM', 'Penyimpanan linen tertata rapi di lemari tutup', 'Linen'),
+(147, 'STPM', 'Tersedia tempat sampah linen infeksius dan non infeksius', 'Linen'),
+(148, 'STPM', 'Tersedia box / lemari tertutup rapat tempat penyimpanan alat steril', 'Perawatan Peralatan Pasien'),
+(149, 'STPM', 'Temperatur ruangan 20-40° dan kelembaban 40-60%', 'Perawatan Peralatan Pasien'),
+(150, 'STPM', 'Alat steril disimpan rapi', 'Perawatan Peralatan Pasien'),
+(151, 'STPM', 'Alat selalu siap pakai', 'Perawatan Peralatan Pasien'),
+(152, 'STPM', 'Terdapat tanda indikator pada alat steril', 'Perawatan Peralatan Pasien'),
+(153, 'STPM', 'Semua petugas ruangan telah mendapatkan edukasi tentang tata cara etika batuk', 'Etika Batuk'),
+(154, 'STPM', 'Tersedia leaflet etika batuk di unit pelayanan', 'Etika Batuk'),
+(155, 'STPM', 'Petugas menerapkan SPO etika batuk', 'Etika Batuk'),
+(156, 'STPM', 'Petugas mencuci tangan setelah batuk / bersin', 'Etika Batuk'),
+(157, 'STPM', 'Petugas membuang tsu yang telah digunakan saat batuk / bersin', 'Etika Batuk'),
+(158, 'STPM', 'Tersedia tempat sampah untuk membuang tisu', 'Etika Batuk');
 
 -- --------------------------------------------------------
 
@@ -432,6 +572,21 @@ INSERT INTO `monitoring_benda_tajam` (`id`, `user_id`, `indikator_id`, `minggu`,
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `monitoring_medis`
+--
+
+CREATE TABLE `monitoring_medis` (
+  `id` int NOT NULL,
+  `user_id` int NOT NULL,
+  `indikator_id` varchar(255) NOT NULL,
+  `minggu` int NOT NULL,
+  `nilai` int NOT NULL,
+  `waktu` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `supervisi`
 --
 
@@ -507,7 +662,7 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT for table `indikators`
 --
 ALTER TABLE `indikators`
-  MODIFY `indikator_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `indikator_id` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=159;
 
 --
 -- AUTO_INCREMENT for table `monitoring_ambulance`
