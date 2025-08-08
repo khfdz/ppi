@@ -43,7 +43,7 @@ const HomePage = ({ onNavigate, onLogout, user }) => {
       color: 'from-purple-500 to-violet-600',
       bgColor: 'from-purple-50 to-violet-50',
       borderColor: 'border-purple-200',
-      onClick: () => handleComingSoon('Supervisi TW I - Penunjang Medis')
+      onClick: () => onNavigate({ modul: 'STPM'})
     },
     {
       id: 'supervisi-tps',

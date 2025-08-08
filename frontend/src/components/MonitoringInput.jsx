@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import { fetchIndikators } from '../api/indikatorApi';
 import { submitMonitoring } from '../api/monitoringApi';
 
-const MonitoringInput = ({ token, minggu, onCancel, completedWeeks = [] }) => {
+const MonitoringInput = ({ token, minggu, onCancel, onComplete, completedWeeks = [] }) => {
   const [indikators, setIndikators] = useState([]);
   const [answers, setAnswers] = useState({});
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -126,6 +126,10 @@ useEffect(() => {
       });
 
       await Promise.all(submitPromises);
+
+      if (typeof onComplete === 'function') {
+        onComplete();
+      }
 
       // Show success message with summary
       const resultHtml = Object.values(answers)
@@ -392,61 +396,105 @@ useEffect(() => {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center mb-6">
+       <div className="flex justify-between items-center mb-6">
+  {/* Back Button */}
+  <button
+    onClick={handlePrevious}
+    disabled={currentIndex === 0}
+    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+      currentIndex === 0
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md transform hover:-translate-y-0.5'
+    }`}
+  >
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    </svg>
+    Back
+  </button>
+
+  {/* Numbered Buttons */}
+  <div className="flex items-center gap-2">
+    {(() => {
+      const total = indikators.length;
+      const maxButtons = 4; // Show up to 4 numbers at a time
+      let startIndex = Math.max(0, currentIndex - 1); // Start one before current
+      let endIndex = Math.min(total, startIndex + maxButtons); // End at max 4 buttons or total
+
+      // Adjust startIndex if near the end to always show maxButtons if possible
+      if (endIndex - startIndex < maxButtons && total > maxButtons) {
+        startIndex = Math.max(0, endIndex - maxButtons);
+      }
+
+      // If total is less than or equal to maxButtons, show all
+      if (total <= maxButtons) {
+        startIndex = 0;
+        endIndex = total;
+      }
+
+      const buttons = [];
+      for (let i = startIndex; i < endIndex; i++) {
+        buttons.push(
           <button
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              currentIndex === 0
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md transform hover:-translate-y-0.5'
+            key={i}
+            onClick={() => setCurrentIndex(i)}
+            className={`w-8 h-8 rounded-full text-sm font-medium transition-all duration-200 ${
+              i === currentIndex
+                ? 'bg-blue-500 text-white shadow-lg'
+                : answers[indikators[i]?.indikator_id] !== null &&
+                  answers[indikators[i]?.indikator_id] !== undefined
+                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
             }`}
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          
+            {answers[indikators[i]?.indikator_id] !== null &&
+            answers[indikators[i]?.indikator_id] !== undefined ? (
+              <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              i + 1
+            )}
           </button>
+        );
+      }
 
-          <div className="flex items-center gap-2">
-            {indikators.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-8 h-8 rounded-full text-sm font-medium transition-all duration-200 ${
-                  index === currentIndex
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : answers[indikators[index]?.indikator_id] !== null && answers[indikators[index]?.indikator_id] !== undefined
-                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
-              >
-                {answers[indikators[index]?.indikator_id] !== null && answers[indikators[index]?.indikator_id] !== undefined ? (
-                  <svg className="w-4 h-4 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  index + 1
-                )}
-              </button>
-            ))}
-          </div>
+      // Add ellipsis if there are more questions before or after
+      if (startIndex > 0) {
+        buttons.unshift(
+          <span key="start-ellipsis" className="text-gray-500">
+            ...
+          </span>
+        );
+      }
+      if (endIndex < total) {
+        buttons.push(
+          <span key="end-ellipsis" className="text-gray-500">
+            ...
+          </span>
+        );
+      }
 
-          <button
-            onClick={handleNext}
-            disabled={currentIndex === indikators.length - 1}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
-              currentIndex === indikators.length - 1
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md transform hover:-translate-y-0.5'
-            }`}
-          >
-        
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+      return buttons;
+    })()}
+  </div>
+
+  {/* Next Button */}
+  <button
+    onClick={handleNext}
+    disabled={currentIndex === indikators.length - 1}
+    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 ${
+      currentIndex === indikators.length - 1
+        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+        : 'bg-gray-200 text-gray-700 hover:bg-gray-300 hover:shadow-md transform hover:-translate-y-0.5'
+    }`}
+  >
+    Next
+    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+</div>
 
         {/* Submit Button */}
         <div className="border-t pt-6">

@@ -12,6 +12,9 @@ export const fetchIndikators = async (token, filter = {}) => {
 
   const url = `${API_BASE_URL}/api/indikator${params.toString() ? `?${params.toString()}` : ''}`;
 
+  // Debug log URL
+  console.log("🔍 Request URL:", url);
+
   const response = await axios.get(url, {
     headers: {
       Authorization: `Bearer ${token}`,
