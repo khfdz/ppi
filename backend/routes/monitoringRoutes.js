@@ -1,23 +1,25 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 const {
   getAllMonitoring,
   createMonitoring,
   updateMonitoring,
   deleteMonitoring,
-} = require('../controllers/monitoringController');
-const { exportMonitoring } = require('../controllers/exportController');
-const { authenticateToken } = require('../middlewares/auth');
+  getMonitoringDetailByKode
+} = require("../controllers/monitoringController");
 
-// All routes are protected
+const { authenticateToken, authorizeRoles } = require("../middlewares/auth");
+
+// Semua route butuh token
 router.use(authenticateToken);
 
-router.get('/export', exportMonitoring);
+// CRUD Monitoring
+router.get("/", authorizeRoles("admin", "supervisor", "user"), getAllMonitoring);
+router.post("/", authorizeRoles("admin"), createMonitoring);
+router.put("/:id", authorizeRoles("admin"), updateMonitoring);
+router.delete("/:id", authorizeRoles("admin"), deleteMonitoring);
 
-router.get('/', getAllMonitoring);
-router.post('/', createMonitoring);
-router.put('/:id', updateMonitoring);
-router.delete('/:id', deleteMonitoring);
-
+// Detail berdasarkan CODE
+router.get("/:kode/detail", authorizeRoles("admin", "supervisor", "user"), getMonitoringDetailByKode);
 
 module.exports = router;

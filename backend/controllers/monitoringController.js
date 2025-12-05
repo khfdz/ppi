@@ -1,209 +1,110 @@
-const pool = require('../config/database');
+const pool = require("../config/db");
 
-const getAllMonitoring = async (req, res) => {
+// GET semua monitoring
+exports.getAllMonitoring = async (req, res) => {
   try {
-    const user_id = req.user.user_id;
-    const { tahun, bulan } = req.query;
+    const [rows] = await pool.query("SELECT * FROM monitoring ORDER BY id DESC");
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching monitoring:", err);
+    res.status(500).json({ message: "Gagal mengambil data monitoring" });
+  }
+};
 
-    let query = `
-      SELECT m.*, 
-             i.indikator_isi, 
-             i.indikator_jenis,
-             u.nama_unit AS user_nama_unit
-      FROM monitoring_benda_tajam m
-      JOIN indikators i ON m.indikator_id = i.indikator_id
-      JOIN user u ON m.user_id = u.user_id
-      WHERE m.user_id = ?
+// CREATE monitoring baru
+exports.createMonitoring = async (req, res) => {
+  const { kode, judul, keterangan } = req.body;
+
+  try {
+    await pool.query(
+      "INSERT INTO monitoring (kode, judul, keterangan) VALUES (?, ?, ?)",
+      [kode, judul, keterangan]
+    );
+    res.json({ message: "Monitoring berhasil ditambahkan" });
+  } catch (err) {
+    console.error("Error creating monitoring:", err);
+    res.status(500).json({ message: "Gagal menambahkan monitoring" });
+  }
+};
+
+// UPDATE monitoring
+exports.updateMonitoring = async (req, res) => {
+  const { id } = req.params;
+  const { kode, judul, keterangan } = req.body;
+
+  try {
+    await pool.query(
+      "UPDATE monitoring SET kode=?, judul=?, keterangan=? WHERE id=?",
+      [kode, judul, keterangan, id]
+    );
+    res.json({ message: "Monitoring berhasil diperbarui" });
+  } catch (err) {
+    console.error("Error updating monitoring:", err);
+    res.status(500).json({ message: "Gagal memperbarui monitoring" });
+  }
+};
+
+// DELETE monitoring
+exports.deleteMonitoring = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query("DELETE FROM monitoring WHERE id=?", [id]);
+    res.json({ message: "Monitoring berhasil dihapus" });
+  } catch (err) {
+    console.error("Error deleting monitoring:", err);
+    res.status(500).json({ message: "Gagal menghapus monitoring" });
+  }
+};
+
+exports.getMonitoringDetailByKode = async (req, res) => {
+  try {
+    const { kode } = req.params;
+
+    const sql = `
+      SELECT 
+        tm.id AS tipe_id,
+        tm.monitoring_kode,
+        tm.nama_tipe,
+        mi.id AS indikator_id,
+        mi.indikator_isi
+      FROM indikator_tipe_master tm
+      LEFT JOIN monitoring_indikator mi
+        ON tm.id = mi.indikator_tipe_id
+      WHERE tm.monitoring_kode = ?
+      ORDER BY mi.id ASC
     `;
 
-    const queryParams = [user_id];
+    const [rows] = await pool.query(sql, [kode]);
 
-    if (tahun) {
-      query += ` AND YEAR(m.waktu) = ?`;
-      queryParams.push(tahun);
-    }
+    const result = rows.reduce((acc, row) => {
+      const key = row.tipe_id;
 
-    if (bulan) {
-      query += ` AND MONTH(m.waktu) = ?`;
-      queryParams.push(bulan);
-    }
+      if (!acc[key]) {
+        acc[key] = {
+          tipe_id: row.tipe_id,
+          monitoring_kode: row.monitoring_kode,
+          nama_tipe: row.nama_tipe,
+          indikator: []
+        };
+      }
 
-    query += ` ORDER BY m.waktu DESC`;
+      if (row.indikator_id) {
+        acc[key].indikator.push({
+          indikator_id: row.indikator_id,
+          indikator_isi: row.indikator_isi
+        });
+      }
 
-    const [rows] = await pool.execute(query, queryParams);
-
-    res.json({
-      success: true,
-      data: rows
-    });
-  } catch (error) {
-    console.error('Get monitoring error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-};
-
-
-const createMonitoring = async (req, res) => {
-  try {
-    const { indikator_id, minggu, nilai } = req.body;
-    const user_id = req.user.user_id;
-
-    // Validasi input
-    if (!indikator_id || !minggu || nilai === undefined) {
-      return res.status(400).json({
-        success: false,
-        message: 'All fields are required'
-      });
-    }
-
-    // Cek apakah indikator_id valid
-    const [indikatorExists] = await pool.execute(
-      'SELECT indikator_id FROM indikators WHERE indikator_id = ?',
-      [indikator_id]
-    );
-
-    if (indikatorExists.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Indikator tidak tersedia.'
-      });
-    }
-
-    // Cek apakah data sudah ada untuk user + indikator + minggu + bulan + tahun
-    const now = new Date();
-    const currentMonth = now.getMonth() + 1;
-    const currentYear = now.getFullYear();
-
-    const [indikatorCheck] = await pool.execute(
-      `SELECT id FROM monitoring_benda_tajam 
-       WHERE user_id = ? 
-       AND indikator_id = ? 
-       AND minggu = ?
-       AND MONTH(Waktu) = ? 
-       AND YEAR(Waktu) = ?`,
-      [user_id, indikator_id, minggu, currentMonth, currentYear]
-    );
-
-    if (indikatorCheck.length > 0) {
-      // Data sudah ada → update nilai
-      const idToUpdate = indikatorCheck[0].id;
-
-      await pool.execute(
-        `UPDATE monitoring_benda_tajam 
-         SET nilai = ?, Waktu = NOW()
-         WHERE id = ?`,
-        [nilai, idToUpdate]
-      );
-
-      const [updatedData] = await pool.execute(
-        `SELECT id, indikator_id, minggu, nilai, user_id, Waktu AS waktu 
-         FROM monitoring_benda_tajam 
-         WHERE id = ?`,
-        [idToUpdate]
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: 'Data monitoring berhasil diperbarui',
-        data: updatedData[0]
-      });
-    }
-
-    // Data belum ada → insert baru
-    const [insertResult] = await pool.execute(
-      `INSERT INTO monitoring_benda_tajam 
-       (user_id, indikator_id, minggu, nilai, Waktu) 
-       VALUES (?, ?, ?, ?, NOW())`,
-      [user_id, indikator_id, minggu, nilai]
-    );
-
-    const [newData] = await pool.execute(
-      `SELECT id, indikator_id, minggu, nilai, user_id, Waktu AS waktu 
-       FROM monitoring_benda_tajam 
-       WHERE id = ?`,
-      [insertResult.insertId]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: 'Data monitoring berhasil ditambahkan',
-      data: newData[0]
-    });
-  } catch (error) {
-    console.error('Create monitoring error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-};
-
-
-const updateMonitoring = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { indikator_id, minggu, nilai } = req.body;
-
-    const [result] = await pool.execute(
-      'UPDATE monitoring_benda_tajam SET indikator_id = ?, minggu = ?, nilai = ?, Waktu = NOW() WHERE id = ? AND user_id = ?',
-      [indikator_id, minggu, nilai, id, req.user.user_id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data not found or unauthorized'
-      });
-    }
+      return acc;
+    }, {});
 
     res.json({
       success: true,
-      message: 'Monitoring data updated successfully'
+      data: Object.values(result)
     });
-  } catch (error) {
-    console.error('Update monitoring error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: err.message });
   }
-};
-
-const deleteMonitoring = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const [result] = await pool.execute(
-      'DELETE FROM monitoring_benda_tajam WHERE id = ? AND user_id = ?',
-      [id, req.user.user_id]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        message: 'Data not found or unauthorized'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Monitoring data deleted successfully'
-    });
-  } catch (error) {
-    console.error('Delete monitoring error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
-  }
-};
-
-module.exports = {
-  getAllMonitoring,
-  createMonitoring,
-  updateMonitoring,
-  deleteMonitoring
 };

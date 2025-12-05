@@ -1,151 +1,94 @@
-import React, { useEffect, useState } from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useNavigate,
-} from 'react-router-dom';
+import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
+import AdminPanel from "./pages/AdminPanel";
+import MonitoringPage from "./pages/MonitoringPage"; // 👉 tambahkan ini
+import ProtectedRoute from "./components/ProtectedRoute";
+import IndikatorTipePage from "./pages/IndikatorTipePage";
+import MonitoringDetail from "./pages/user/MonitoringDetail";
+import MonitoringIndikatorInput from "./pages/admin/MonitoringIndikatorInput";
 
-import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
-import MonitoringPage from './pages/MonitoringPage';
-import AmbulancePage from './pages/AmbulancePage';
-import MedisPage from './pages/MedisPage';
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public Route */}
+        <Route path="/" element={<Login />} />
+        <Route path="/home" element={<Home />} />
 
-// Ambil user dari localStorage
-const getUserFromStorage = () => {
-  try {
-    const userString = localStorage.getItem('user');
-    if (userString && userString !== 'undefined') {
-      return JSON.parse(userString);
-    }
-  } catch (error) {
-    console.error("❌ Gagal parse user dari localStorage:", error);
-    localStorage.removeItem('user');
+        {/* Dashboard */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute allowedRoles={["admin", "user", "supervisor"]}>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+  path="/admin/monitoring-indikator"
+  element={
+    <ProtectedRoute allowedRoles={["admin"]}>
+      <MonitoringIndikatorInput />
+    </ProtectedRoute>
   }
-  return null;
-};
+/>
 
-// Komponen berisi semua route (agar useNavigate bisa dipakai)
-const AppRoutes = ({ token, setToken, user, setUser }) => {
-  const navigate = useNavigate();
 
-  const handleLoginSuccess = (receivedToken, userData) => {
-    localStorage.setItem('token', receivedToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setToken(receivedToken);
-    setUser(userData);
-    navigate('/');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setToken(null);
-    setUser(null);
-    navigate('/login');
-  };
-
-  // Mapping modul → path
-  const moduleToPathMap = {
-    MBTJ: '/monitoring',
-    MPKDA: '/ambulance',
-    STPM: '/medis',
-    // Tambahkan modul baru di sini:
-    // XYZ: '/xyz-page',
-  };
-
-  return (
-    <Routes>
-      <Route
-        path="/login"
-        element={
-          token ? <Navigate to="/" /> : <LoginPage onLoginSuccess={handleLoginSuccess} />
-        }
-      />
-      <Route
-        path="/"
-        element={
-          token ? (
-            <HomePage
-              user={user}
-              onLogout={handleLogout}
-              onNavigate={({ modul }) => {
-                const path = moduleToPathMap[modul];
-                if (path) {
-                  navigate(`${path}?jenis=${modul}`);
-                } else {
-                  console.warn(`❗ Modul tidak dikenali: ${modul}`);
-                }
-              }}
-            />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
-      <Route
-        path="/monitoring"
-        element={
-          token ? (
-            <MonitoringPage
-              token={token}
-              user={user}
-              onLogout={handleLogout}
-              onBack={() => navigate('/')}
-            />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
-      <Route
-        path="/ambulance"
-        element={
-          token ? (
-            <AmbulancePage
-              token={token}
-              user={user}
-              onLogout={handleLogout}
-              onBack={() => navigate('/')}
-            />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
-
-      <Route 
-        path="/medis"
-        element={
-          token ? (
-            <MedisPage
-            token={token}
-            user={user}
-            onLogout={handleLogout}
-            onBack={() => navigate('/')}
-        />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
+        {/* Admin Panel */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminPanel />
+            </ProtectedRoute>
+          }
         />
 
+        {/* Monitoring Main Page */}
+        <Route
+          path="/monitoring"
+          element={
+            <ProtectedRoute allowedRoles={["admin", "user", "supervisor"]}>
+              <MonitoringPage />
+            </ProtectedRoute>
+          }
+        />
 
-    </Routes>
+        <Route
+  path="/indikator-tipe"
+  element={
+    <ProtectedRoute allowedRoles={["admin", "supervisor"]}>
+      <IndikatorTipePage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route 
+  path="/user/monitoring/:kode" 
+  element={
+    <ProtectedRoute allowedRoles={["admin", "supervisor", "user"]}>
+      <MonitoringDetail />
+    </ProtectedRoute>
+  }
+/>
+
+
+
+
+
+        {/* (Opsional) Tambahkan halaman monitoring lain nanti */}
+        {/* 
+        <Route path="/monitoring/list" ... />
+        <Route path="/monitoring/tipe" ... />
+        <Route path="/monitoring/indikator" ... />
+        <Route path="/monitoring/report" ... />
+        */}
+
+      </Routes>
+    </BrowserRouter>
   );
-};
-
-const App = () => {
-  const [token, setToken] = useState(localStorage.getItem('token'));
-  const [user, setUser] = useState(getUserFromStorage());
-
-  return (
-    <Router>
-      <AppRoutes token={token} setToken={setToken} user={user} setUser={setUser} />
-    </Router>
-  );
-};
-
-export default App;
+}
