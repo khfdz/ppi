@@ -1,12 +1,11 @@
+const { notFound, errorHandler } = require("./middlewares/handleError");
+
+
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const pool = require('./config/db'); // koneksi MySQL
 const authRoutes = require('./routes/authRoutes');
-const monitoringRoutes = require('./routes/monitoringRoutes');
-const indikatorTipeRoutes = require('./routes/indikatorTipeRoutes');
-const monitoringIndikatorRoutes = require('./routes/monitoringIndikatorRoutes');
-const monitoringPengisianRoutes = require('./routes/monitoringPengisianRoutes');
 
 dotenv.config();
 const app = express();
@@ -46,10 +45,7 @@ app.use(express.urlencoded({ extended: true }));
    ✅ Routes
 ====================================================== */
 app.use('/api/auth', authRoutes);
-app.use('/api/monitoring', monitoringRoutes);
-app.use('/api/indikator-tipe', indikatorTipeRoutes);
-app.use('/api/monitoring-indikator', monitoringIndikatorRoutes);
-app.use('/api/monitoring-pengisian', monitoringPengisianRoutes);
+
 
 /* ======================================================
    ✅ Health Check & Root
@@ -112,3 +108,9 @@ app.listen(PORT, () => {
   console.log(`🗄️  Database: ${process.env.DB_NAME || 'db_ppi'}`);
   console.log('----------------------------------------');
 });
+
+const createError = require("http-errors");
+
+
+app.use(notFound);
+app.use(errorHandler);
