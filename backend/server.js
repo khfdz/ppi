@@ -1,17 +1,21 @@
-const { notFound, errorHandler } = require("./middlewares/handleError");
-
-
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const pool = require('./config/db'); // koneksi MySQL
+require("express-async-errors");
+const createError = require("http-errors");
+
+const pool = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const momentRoutes = require('./routes/momentRoutes');
+const monitoringCleaningRoutes = require('./routes/monitoringCleaningRoutes');
+const monitoringGiziRoutes = require('./routes/monitoringGiziRoutes');
+const { notFound, errorHandler } = require("./middlewares/handleError");
 
 dotenv.config();
 const app = express();
 
 /* ======================================================
-   ✅ CORS Configuration — HARUS SEBELUM ROUTES
+   ✅ CORS Configuration
 ====================================================== */
 app.use(cors({
   origin: function (origin, callback) {
@@ -27,7 +31,7 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('❌ Not allowed by CORS'));
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
@@ -36,7 +40,7 @@ app.use(cors({
 }));
 
 /* ======================================================
-   ✅ Middleware utama
+   ✅ Body Parser
 ====================================================== */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -45,57 +49,19 @@ app.use(express.urlencoded({ extended: true }));
    ✅ Routes
 ====================================================== */
 app.use('/api/auth', authRoutes);
-
-
-/* ======================================================
-   ✅ Health Check & Root
-====================================================== */
-app.get('/api/health', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT NOW() AS server_time');
-    res.json({
-      status: 'OK',
-      database: 'Connected',
-      time: rows[0].server_time,
-      message: 'Server & Database aktif 🚀',
-    });
-  } catch (err) {
-    res.json({
-      status: 'OK',
-      database: 'Disconnected ⚠️',
-      message: 'Server aktif tapi database gagal terkoneksi',
-    });
-  }
-});
-
-app.get('/', (req, res) => {
-  res.send(`
-    <h2>🚀 API Server is Running</h2>
-    <p>Environment: <b>${process.env.NODE_ENV || 'development'}</b></p>
-    <p>Database: <b>${process.env.DB_NAME || 'Not set'}</b></p>
-    <hr/>
-    <p>Routes aktif:</p>
-    <ul>
-      <li>✅ /api/auth</li>
-      <li>✅ /api/monitoring</li>
-      <li>✅ /api/tipe</li>
-      <li>✅ /api/monitoring-indikator</li>
-      <li>✅ /api/health</li>
-    </ul>
-  `);
-});
+app.use('/api/moment', momentRoutes);
+app.use('/api/monitoring/cleaning', monitoringCleaningRoutes);
+app.use('/api/monitoring/gizi', monitoringGiziRoutes);
 
 /* ======================================================
-   ✅ Error Handler & 404
+   ❗ Route tidak ditemukan
 ====================================================== */
-app.use((err, req, res, next) => {
-  console.error('❌ Server Error:', err.stack);
-  res.status(500).json({ message: 'Something went wrong on the server.' });
-});
+app.use(notFound);
 
-app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route not found' });
-});
+/* ======================================================
+   ❗ Error Handler Global
+====================================================== */
+app.use(errorHandler);
 
 /* ======================================================
    ✅ Jalankan Server
@@ -108,9 +74,3 @@ app.listen(PORT, () => {
   console.log(`🗄️  Database: ${process.env.DB_NAME || 'db_ppi'}`);
   console.log('----------------------------------------');
 });
-
-const createError = require("http-errors");
-
-
-app.use(notFound);
-app.use(errorHandler);

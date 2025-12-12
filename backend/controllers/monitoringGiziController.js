@@ -3,64 +3,61 @@ const createError = require('http-errors');
 
 exports.createHeader = async (req, res) => {
     const {
-        periode_laporan, 
+        periode_laporan,
         tahun_monitoring,
         tanggal_audit,
         petugas_mengamati,
-        petugas_diaudit,
+        ruangan_diaudit,
+        petugas_gizi,
         cara_kebersihan_tangan,
-        keterangan
+        keterangan,
     } = req.body;
 
     if (!periode_laporan) throw createError(400, 'Periode laporan wajib diisi');
 
     const [result] = await pool.query(
-        `INSERT INTO monitoring_cleaning_service
+        `INSERT INTO monitoring_instalasi_gizi
         (
         periode_laporan,
         tahun_monitoring,
-        tanggal_audit,
+        tangganl_audit,
         petugas_mengamati,
-        petugas_diaudit,
+        ruangan_diaudit,
+        petugas_gizi,
         cara_kebersihan_tangan,
         keterangan
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+         [
             periode_laporan,
             tahun_monitoring,
             tanggal_audit,
             petugas_mengamati,
-            petugas_diaudit,
+            ruangan_diaudit,
+            petugas_gizi,
             cara_kebersihan_tangan,
             keterangan
-        ]
-        )
-        
-        res.json({
-            success: true,
-            message: "Data berhasil disimpan",
-            id: result.insertId
-        })
+         ]
+    )
 
+    res.json({
+        success: true,
+        message: "Data berhasil disimpan",
+        id: result.insertId   
+    })
 }
 
 exports.createDetail = async (req, res) => {
     const {
-        monitoring_id, 
-        moment_id,
-        hasil
+        monitoring_id, moment_id, hasil
     } = req.body;
-    
-    if (!monitoring_id || !moment_id) throw createError(400, 'Monitoring id dan moment id wajib diisi');
 
+    if (!monitoring_id || !moment_id) throw createError(400, 'Monitoring id dan moment id wajib diisi');
+    
     await pool.query(
-        `
-        INSERT INTO monitoring_cleaning_service_detail
+        `INSERT INTO monitoring_instalasi_gizi_detail
         (
-        monitoring_id,
-        moment_id,
-        hasil
-        ) VALUES (?, ?, ?)`,
+        monitoring_id, moment_id, hasil
+        ) VALUES (?, ?, ?)`
          [
             monitoring_id,
             moment_id,
@@ -85,39 +82,58 @@ exports.createFull = async (req, res) => {
 
     await conn.beginTransaction();
 
-    const [headerInsert] = await conn.query(
-        `INSERT INTO monitoring_cleaning_service
-        (periode_laporan, tahun_monitoring, tanggal_audit, petugas_mengamati, petugas_diaudit, cara_kebersihan_tangan, keterangan) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    const [h] = await conn.query(
+        `INSERT INTO monitoring_instalasi_gizi
+        (
+        periode_laporan,
+        tahun_monitoring,
+        tanggal_audit,
+        petugas_mengamati,
+        ruangan_diaudit,
+        petugas_gizi,
+        cara_kebersihan_tangan,
+        keterangan
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
             header.periode_laporan,
             header.tahun_monitoring,
             header.tanggal_audit,
             header.petugas_mengamati,
-            header.petugas_diaudit,
+            header.ruangan_diaudit,
+            header.petugas_gizi,
             header.cara_kebersihan_tangan,
             header.keterangan
         ]
     )
 
-    const headerId = headerInsert.insertId;
+    const headerId = h.insertId;
 
     for (const d of detail) {
         if (!d.moment_id) throw createError(400, "moment_id wajib diisi");
 
         await conn.query(
-            `
-            INSERT INTO monitoring_cleaning_service_detail
-            (monitoring_id, moment_id, hasil)
-            VALUES (?, ?, ?)           
-            `,
-            [headerId, d.moment_id, d.hasil]
+            `INSERT INTO monitoring_instalasi_gizi_detail
+            (
+            monitoring_id,
+            moment_id,
+            hasil
+            ) VALUES (?, ?, ?)`,
+            [
+                headerId,
+                d.moment_id,
+                d.hasil
+            ]
         )
     }
 
     await conn.commit();
     conn.release();
 
-    res.json({ success: true, id:headerId });
+    res.json({
+        success: true,
+        message: "Data berhasil disimpan",
+        id: headerId
+    })
 }
 
 exports.getById = async (req, res) => {
@@ -125,24 +141,21 @@ exports.getById = async (req, res) => {
 
     if (!id) throw createError(400, "ID tidak boleh kosong");
 
-        const [[header]] = await pool.query(
-            `SELECT * FROM monitoring_cleaning_service WHERE id = ?`,
-            [id]
-        )
-        
+    const [[header]] = await pool.query(
+        `SELECT * FROM monitoring_instalasi_gizi WHERE id = ?`,
+        [id]
+    )
+
     if (!header) throw createError(404, "Data monitoring tidak ditemukan");
 
     const [detail] = await pool.query(
         `SELECT d.*, m.nama_moment, m.urutan
-        FROM monitoring_cleaning_service_detail d
+        FROM monitoring_instalasi_gizi_detail d
         LEFT JOIN master_moment m ON m.id = d.moment_id
         WHERE d.monitoring_id = ?
         ORDER BY m.urutan ASC`, 
         [id]
     );
     
-    
     res.json({ success: true, header, detail });
-
-
 }
